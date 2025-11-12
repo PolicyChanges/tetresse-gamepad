@@ -40,8 +40,6 @@ var gamepadAPI = {
             for (var b = 0, t = c.buttons.length; b < t; b++) {
              //console.log(c.buttons[b]);
                 if (c.buttons[b].pressed) {
-                    
-                
                     pressed.push(gamepadAPI.buttons[b]);
                 }
             }
@@ -971,6 +969,8 @@ class Game {
 
         this.listeners = [];
         let initGP = false;
+        let gpButtons = [];
+        let prevGpButtons = [];
         
         var setListeners = function() {
             var b = null;
@@ -1111,44 +1111,10 @@ class Game {
             b.listeners.push(keypress);
            addEvent(this, "keyup", keyrelease);
            addEvent(this, "keydown", keypress);
-
-        let prevGpButtons = [];
-        let gpButtons = [];
         
-        
-        let previousButtons = new Array(16).fill(false);
-        
-        /*
-        let gamepadIndex = null; // Stores the index of the connected gamepad
-       
-        let gamepads = {};
-
-        function scangamepads() {
-            var gamepads = navigator.getGamepads ? navigator.getGamepads() : (navigator.webkitGetGamepads ? navigator.webkitGetGamepads() : []);
-            for (var i = 0; i < gamepads.length; i++) 
-            {
-                if (gamepads[i] && (gamepads[i].index in controllers)) 
-                {
-                    gamepads[gamepads[i].index] = gamepads[i];
-                }
-            }
-        }
-        window.addEventListener("gamepadconnected", (event) => {
-          gamepads = navigator.getGamepads();
-          gamepadIndex = event.gamepad.index;
-          console.log(`Gamepad connected at index ${gamepadIndex}`);
-          //requestAnimationFrame(gameLoop); // Start polling when a gamepad connects
-        });
-
-        window.addEventListener("gamepaddisconnected", (event) => {
-          if (gamepadIndex === event.gamepad.index) {
-            gamepadIndex = null;
-            console.log(`Gamepad disconnected from index ${event.gamepad.index}`);
-          }
-        });
-*/
+    
         function dispatchKeyEvent(type, key) {
-           console.log("event: " + `${key} ${type}`);
+           //console.log("event: " + `${key} ${type}`);
           const event = new KeyboardEvent(type, {
             key: key,
             keyCode:key,
@@ -1156,9 +1122,6 @@ class Game {
             bubbles: true,
             cancelable: true,
           });
-          //let ele = document.getElementById("board-cover");
-          //console.log("element id: " + ele.id);
-          //ele.dispatchEvent(event);
             document.body.dispatchEvent(event);
         }
         var updateGamepad = function () {
@@ -1180,7 +1143,7 @@ class Game {
                       [1, 38],//'x'],
                       [4, 16],//'ShiftLeft'],
                       [5, 32],//' '],		  
-                      [12, 32],//'ArrowUp'],
+                      //[12, 32],//'ArrowUp'],
                       [13, 40],//'ArrowDown'],
                       [14, 37],//'ArrowLeft'],
                       [7, 39]//'ArrowRight']
@@ -1202,8 +1165,12 @@ class Game {
             }
             
             if(initGP == false) {
-                document.addEventListener('keydown', keypress.bind(this)); 
-                document.addEventListener('keyup', keyrelease.bind(this));
+                b.listeners.push(keyrelease);
+                b.listeners.push(keypress);
+                addEvent(this, "keyup", keyrelease);
+                addEvent(this, "keydown", keypress);
+                //document.addEventListener('keydown', keypress.bind(this)); 
+                //document.addEventListener('keyup', keyrelease.bind(this));
               initGP = true;
             }
         };		
@@ -1214,7 +1181,7 @@ class Game {
         var unsetListeners = function() {
             var b = null;
             for (var i = 0; i < games.length; i++)
-                if (this.parentNode.parentNode === games[i].element) {
+                if (this.gamepadAPI != undefined || this.parentNode.parentNode === games[i].element) {
                     b = games[i];
                     break;
                 }
@@ -1760,6 +1727,7 @@ class Game {
     // returns object with all settings: use .label to get a list of labels of the settings
     static getDefaultSettings() {
         var settings = {
+            irsEnabled: true,
             das: 167, //
             arr: Math.floor(1000/60),
             gravityDelay: 1000,
