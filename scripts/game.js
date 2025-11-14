@@ -56,24 +56,12 @@ var gamepadAPI = {
         return pressed;
     },	
 
-    buttonPressed: function(button, hold) {
-        var newPress = false;
-        for (var i = 0, s = gamepadAPI.buttonsStatus.length; i < s; i++) {
-			
-            if (gamepadAPI.buttonsStatus[i] == button) {
-                newPress = true;
-                if (!hold) {
-                    for (var j = 0, p = gamepadAPI.buttonsCache.length; j < p; j++) {
-                        if (gamepadAPI.buttonsCache[j] == button) {
-                            newPress = false;
-                        }
-                    }
-                }
-            }
-        }
-        return newPress;
+    isButtonPressed:function (button){
+        let currentbuttons = gamepadAPI.update();
+        console.log("button: " + currentbuttons);
+        return currentbuttons.length == 0 ? false : currentbuttons.includes(button);
     },
-
+    
     buttons: [ // XBox360 layout 
    		'A', 'B', 'X', 'Y',
         'LB', 'RB', 'Axis-Left', 'DPad-Right',
@@ -508,6 +496,7 @@ class Game {
                 v.classList.add(this.name + "-ar");
                 v.tabIndex = "2";
                 addEvent(v, "click", Game.addKeybind);
+                
             }
             // gameplay
             var gamePlay = addChild(settings, settings.id + "-game-play", "div");
@@ -1004,6 +993,17 @@ class Game {
                         b = games[i];
                     }
                 
+                if(e.keyCode == 27){
+                    b.resetGame();
+                    b.playPiece();
+                    return;
+                   // b.gameOver = true;
+                   // b.piece.gameOver = true;
+                    //b.piece.resetGame();
+                  //  b.piece = null;
+                    //b = null;
+                    
+                }
                 //b = games[0];
                 // TODO this shouldn't need to be here (when gameover)
                 if (b.gameOver)
@@ -1138,15 +1138,49 @@ class Game {
             updateGamepad();
             
             if(gamepadEnabled()){
+           /*     var b = null;
+                for (var i = 0; i < games.length; i++)
+                    if (this.gamepadAPI != undefined || this.parentNode.parentNode === games[i].element) {
+                        b = games[i];
+                    }
+                                keyCodes: {
+                39: "right",
+                37: "left",
+                38: "cw",
+                90: "ccw",
+                40: "sd",
+                32: "hd",
+                67: "hold",
+                16: "hold",
+                87: "hold",
+                69: "ccw",
+                82: "cw",
+                74: "left",
+                75: "sd",
+                76: "right",
+            },
+                buttons: [ // XBox360 layout 
+   		'A', 'B', 'X', 'Y',
+        'LB', 'RB', 'Axis-Left', 'DPad-Right',
+        'Back', 'Start', 'Power', 'Axis-Right','DPad-Up', 'DPad-Down' ,  'DPad-Left','DPad-Right'
+		],*/
                 const keyMap = new Map([
-                      [0, 69],//'z'],
-                      [1, 38],//'x'],
-                      [4, 16],//'ShiftLeft'],
-                      [5, 32],//' '],		  
-                      //[12, 32],//'ArrowUp'],
-                      [13, 40],//'ArrowDown'],
-                      [14, 37],//'ArrowLeft'],
-                      [7, 39]//'ArrowRight']
+                      [0, 69], //A-'z'],
+                      [1, 38], //B-'x'],
+                      [2, 65], //X-A
+                      [3, 66], //Y-B
+                      [4, 16], //Left Bumper-'ShiftLeft'],
+                      [5, 32], //Right Bumper-' '],		  
+                      [6, undefined], //Axis-Left-
+                      [7, 39], //DPad-Right-ArrowRight
+                      [8, 27], //Back Button-Escape
+                      [9, 13], //Start-Enter
+                      [10, undefined], //?
+                      [11, undefined], //Axis-right
+                      [12, 68], //DPadUp-D
+                      [13, 40], //DPad-Down-'ArrowDown'],
+                      [14, 37], //DPad-Left-'ArrowLeft'],
+                      //[15, 0],
                     ]);
                 for(let i = 0; i < 15; i++){
                 let isContainedCurrent = gpButtons.includes(gamepadAPI.buttons[i]);
@@ -1169,9 +1203,8 @@ class Game {
                 b.listeners.push(keypress);
                 addEvent(this, "keyup", keyrelease);
                 addEvent(this, "keydown", keypress);
-                //document.addEventListener('keydown', keypress.bind(this)); 
-                //document.addEventListener('keyup', keyrelease.bind(this));
-              initGP = true;
+                addEvent(this, "click", keypress);
+                initGP = true;
             }
         };		
 
@@ -1251,7 +1284,7 @@ class Game {
         clearTimeout(this.playRecording);
         // TODO
     }
-
+    
     playPiece() {
         if (this.paused || this.gameOver)
             return;
@@ -1265,15 +1298,20 @@ class Game {
             if (this.board.tiles[20][i].p != "")
                 this.gameOver = true;
 
+        var rotate = 0;
         if (!this.gameOver && (this.piece == null || this.piece.isDropped)) {
             // every new piece's turn starts here
             this.stats.executeStatsListeners("pieceSpawn");
             this.piece = this.nextPieces.splice(0, 1)[0];
-
-            this.piece.addMove(0);
             this.updateQueue();
         }
-        
+            // IRS TODO: fix
+            if(gamepadAPI.isButtonPressed('B'))
+                rotate = 1;
+            else if(gamepadAPI.isButtonPressed('A'))
+                rotate = -1;
+            if(rotate!=0)
+                this.piece.rotate(rotate);
         if (!this.gameOver) {
             this.piece.display();
             this.gravTimer = new GravityTimer(this);
@@ -1532,13 +1570,6 @@ class Game {
         
     }
 
-    static repeatKeys(action, bool, speed) {
-        if (!bool.down)
-            return;
-        action();
-        window.setTimeout(Game.repeatKeys, speed, action, bool, speed);
-    }
-
     addMove(func) {
         var loc = this.piece.getLocation();
         var rotation = this.piece.getRotation();
@@ -1558,6 +1589,15 @@ class Game {
             }
         }
     }
+    
+    static repeatKeys(action, bool, speed) {
+        if (!bool.down)
+            return;
+        action();
+        window.setTimeout(Game.repeatKeys, speed, action, bool, speed);
+    }
+
+
 
     updateKeyCodes() {
         // TODO add event listener function thingy
@@ -1697,6 +1737,7 @@ class Game {
 
     static addKeybind(e) {
         e.target.style.background = "#cd7f7f";
+        
         e.target.addEventListener("keydown", function(e) {
             e = e || window.event;
             var keyCode = e.keyCode;
@@ -1708,6 +1749,7 @@ class Game {
             var ele = e.target.cloneNode(true);
             e.target.parentNode.replaceChild(ele, e.target);
             addEvent(ele, "click", Game.addKeybind);
+            
 
         });
     }
@@ -1727,9 +1769,8 @@ class Game {
     // returns object with all settings: use .label to get a list of labels of the settings
     static getDefaultSettings() {
         var settings = {
-            irsEnabled: true,
             das: 167, //
-            arr: Math.floor(1000/60),
+            arr: 32, //Math.floor(1000/60),
             gravityDelay: 1000,
             maxMoves: 20,
             softDropSpeed: 25,
@@ -1739,6 +1780,7 @@ class Game {
             boolShadowPiece: true,
             numNextPieces: 5,
             keyCodes: {
+                27: "reset",
                 39: "right",
                 37: "left",
                 38: "cw",
@@ -1751,8 +1793,10 @@ class Game {
                 69: "ccw",
                 82: "cw",
                 74: "left",
+                
                 75: "sd",
                 76: "right",
+                
             },
             loadFile: [],
             optionsBarVisible: true,
@@ -2351,6 +2395,18 @@ class Piece {
         this.clearShadow();
     }
     
+    holdIRS(){
+        var rotate=0;
+        // IRS TODO: fix
+        if(gamepadAPI.isButtonPressed('B'))
+            rotate = 1;
+        else if(gamepadAPI.isButtonPressed('A'))
+            rotate = -1;
+        if(rotate!=0)
+            this.rotate(rotate);
+        this.clear();
+    }
+        
     hold() {
         this.addMove(7);
         this.clear();
@@ -2358,6 +2414,7 @@ class Piece {
         this.setRotation(0);
         this.loc = this.getDefaultLoc();
         this.clear();
+
     }
 
     setRotation(r) {

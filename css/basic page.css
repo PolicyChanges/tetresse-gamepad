@@ -1,15 +1,15 @@
 body {
-    font-family: "Verdana";
-    background: hsla(188, 86%, 83%, 0.86);
+    font-family: "Helvetica";//Ariel, Helvetica, sans-serif;
+    background: rgba(10,10,10,.92);//hsla(188, 86%, 83%, 0.86);
     margin: 0px;
     overflow: hidden;
     white-space: nowrap;
 }
 
 #page-area-container {
-    background: #7cd5e2;
+    background: rgba(50,50,50,0)//#7cd5e2;
     margin: 0px auto;
-    width: 60%;
+    width: 70%;
     height: 100%;
     position: relative;
 }
@@ -21,15 +21,18 @@ body {
 
 #play-area {
     width: 60%;
-    left: 15%;
+    left: 18%;
     position: relative;
 }
 
 .title {
-    padding-bottom: 6.5%;
+
+    padding-bottom: 3.5%;
     height:0px;
-    background: lightgrey;
+    background: rgba(10,10,10,0);
+    color: dodgerblue;
     margin: 0 auto;
+    left: -8%;
     text-align: center;
     font-size: 40px;
     font-size: 3.5vw;
@@ -39,11 +42,13 @@ body {
 }
 
 #stats {
+
     position: absolute;
-    background: lightblue;
-    top: 15%;
+    background: rgba(40,40,40,1);
+    color: dodgerblue;
+    top: 11.6%;
     left: 65%;
-    width: 30%;
+    width: 15%;
     padding: 1%;
     white-space: nowrap;
     font-size: 1vw;

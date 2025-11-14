@@ -5,23 +5,26 @@ body {
 }
 
 #area {
-    background: white;
+
+    background:white;
     margin: 0 auto;
     position: relative;
 }
 
 
 .game-container {
+
     position: relative;
     width: 100%;
     padding-top: 100%;
+    
 }
 
 .loaded-game {
-    background: black;
+    background: rgba(40,40,40,.9);
     position: absolute;
-    top: 0;
-    left: 0;
+    top: 50;
+    left: 20;
     width: 75%;
     height: 100%;
     display: inline-block;
@@ -29,7 +32,8 @@ body {
 }
 
 #hold {
-    background: grey;
+
+    background: rgba(75,75,75,.9);
     position: absolute;
     left: 5%;
     top: 15%;
@@ -38,7 +42,7 @@ body {
 }
 
 #hold-center {
-    background: black;
+    background: rgba(40,40,40,.9);
     position: absolute;
     left: 10%;
     top: 10%;
@@ -58,7 +62,7 @@ body {
 }
 
 #board {
-    background: grey;
+    background: rgba(20,20,20,.9);;
     position: absolute;
     top: 5%;
     left: 20%;
@@ -68,7 +72,7 @@ body {
 
 #board-cover {
     position: absolute;
-    background:rgba(255,255,255,0.5);
+    background:rgba(255,255,255,0.3);
     width:100%;
     height: 100%;
     outline:none;
@@ -85,7 +89,7 @@ body {
 }
 
 #next-pieces {
-    background: grey;
+    background: rgba(75,75,75,.9);
     position: absolute;
     left: 80%;
     top: 15%;
@@ -103,7 +107,7 @@ body {
     height: 18.6046512%;
     top:2.3255814%;
     left:10%;
-    background: black;
+    background:rgba(40,40,40,1);
 }
 
 #misc {
@@ -125,7 +129,7 @@ body {
 }
 
 #title.minor {
-    background: darkgrey;
+    background: darkgray;
     font-size: 20;
     height: 25;
 }
@@ -186,7 +190,7 @@ span {
     display: table-cell;
     float: left;
     border: 1px solid hsl(300, 2%, 10%);
-    background-color:hsl(300, 100%, 0%);
+    background-color: hsl(300, 100%, 0%);
     width: 10%;
     height: 5%;
 }
@@ -234,7 +238,7 @@ div .shadow {
     top: 1%;
     left: 20%;
     position: absolute;
-    background: #ffffff4a;
+    background: rgba(30,30,30,.8);//#ffffff4a;
 }
 
 .tetresse-option {
