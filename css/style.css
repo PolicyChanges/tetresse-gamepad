@@ -232,13 +232,18 @@ div .shadow {
     border:1px solid hsl(270, 1%, 38%);
 }
 
+div .nobox {
+	background: rgba(40,40,40,0);
+	border: rgba(40,40,40,0);//1px solid rgba(40,40,40,.9);
+}
+
 .tetresse-options {
     width: 60%;
     height: 4%;
     top: 1%;
     left: 20%;
     position: absolute;
-    background: rgba(30,30,30,.8);//#ffffff4a;
+    background: #ffffff4a;
 }
 
 .tetresse-option {

@@ -222,6 +222,7 @@ function wait(ms){
    async function sleep(ms) {
     await new Promise(resolve => setTimeout(resolve, ms));
     }
+    
 class Game {
     /**
      * args - array of arguments
@@ -1558,7 +1559,7 @@ class Game {
         for (var j = 0; j < this.settings.nextPiecesNum; j++) {
             for (var i = 0; i < 4; i++) {
                 var p = this.realNextPiecesLocations[j][i];
-                var u = this.nextPieces[j] == null ? "" : this.nextPieces[j].piece;
+                var u = this.nextPieces[j] == null ? "nobox" : this.nextPieces[j].piece;
                 if (p.classList.length == 0)
                     p.classList.add(u);
                 else
@@ -1575,8 +1576,10 @@ class Game {
         if (this.heldPiece == null) {
             for (var i = 0; i < this.realHeldPieces.length; i++) {
                 var p = this.realHeldPieces[i];
-                if (p.classList.length != 0)
-                    p.classList.value = "";
+                if (p.classList.length != 0) {
+                    p.classList.value = "nobox";
+				}
+                    
             }
             return;
         }
