@@ -1,5 +1,10 @@
 var games;
 
+var hdAudio = new Audio('./snd/sound_hd.ogg');
+var shiftAudio = new Audio('./snd/sound_shift.ogg');
+
+hdAudio.load();
+shiftAudio.load();
 
 var gamepadAPI = {
     controller: {},
@@ -511,6 +516,7 @@ class Game {
                 v.classList.add(this.name + "-ar");
                 v.tabIndex = "2";
                 addEvent(v, "click", Game.addKeybind);
+                addEvent(v, "click", this.gamepadCtx);
                 
             }
             // gameplay
@@ -1076,6 +1082,7 @@ class Game {
                     }
                     b.piece.addMove(6);
                     b.piece.drop();
+                    
                 } else if (b.settings.keyCodes[e.keyCode] == "sd") {
                     if (b.boolKeys.sd.down)
                         return;
@@ -1148,6 +1155,7 @@ class Game {
         function gamepadEnabled() {
             return gamepadAPI.controller || false;
         }
+        this.gamepadCtx = null;
         function pollGamepad() 
         {
             updateGamepad();
@@ -1219,6 +1227,7 @@ class Game {
                 addEvent(this, "keyup", keyrelease);
                 addEvent(this, "keydown", keypress);
                 addEvent(this, "click", keypress);
+			    this.gamepadCtx = this;
                 initGP = true;
             }
         };		
@@ -1246,6 +1255,7 @@ class Game {
         };
         addEvent(this.boardCover, "focus", setListeners);
         addEvent(this.boardCover, "blur", unsetListeners);
+      
     }
 
     playRecord() {
@@ -1566,8 +1576,10 @@ class Game {
                     p.classList.value = u;
                 if (u == "")
                     continue;
-                p.style.top = (this.heldLocations[this.nextPieces[j].piece][i][0]) + "%";
-                p.style.left = (this.heldLocations[this.nextPieces[j].piece][i][1]) + "%";
+                if(this.nextPieces[j].piece != undefined) {
+					p.style.top = (this.heldLocations[this.nextPieces[j].piece][i][0]) + "%";
+					p.style.left = (this.heldLocations[this.nextPieces[j].piece][i][1]) + "%";
+				}	
             }
         }
     }
@@ -1793,6 +1805,7 @@ class Game {
             var ele = e.target.cloneNode(true);
             e.target.parentNode.replaceChild(ele, e.target);
             addEvent(ele, "click", Game.addKeybind);
+            
             
 
         });
@@ -2487,8 +2500,7 @@ class Piece {
                     }
                 }
             }
-        }
-                    
+        }        
         this.displayShadow();
     }
 
@@ -2575,6 +2587,7 @@ class Piece {
             this.display();
         } else {
         this.place();
+        (new Audio('./snd/sound_hd.ogg')).play();
         }
     }
 
@@ -2604,6 +2617,7 @@ class Piece {
                 this.clear();
                 break;
             }
+            (new Audio('./snd/sound_shift.ogg')).play();
             this.loc = newLoc;
         }
         this.display();
