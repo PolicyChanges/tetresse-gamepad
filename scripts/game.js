@@ -208,6 +208,20 @@ function addChild(parent, id, type) {
     return newEle;
 }
 
+function deepClone(copyObject) {
+	return Object.assign(Object.create(Object.getPrototypeOf(copyObject)), copyObject);
+}
+
+function wait(ms){
+   var start = new Date().getTime();
+   var end = start;
+   while(end <= start + ms) {
+     end = new Date().getTime();
+  }
+}
+   async function sleep(ms) {
+    await new Promise(resolve => setTimeout(resolve, ms));
+    }
 class Game {
     /**
      * args - array of arguments
@@ -960,7 +974,8 @@ class Game {
         let initGP = false;
         let gpButtons = [];
         let prevGpButtons = [];
-        
+        let delayEntry = false;
+        this.are = false;
         var setListeners = function() {
             var b = null;
             for (var i = 0; i < games.length; i++)
@@ -997,14 +1012,10 @@ class Game {
                     b.resetGame();
                     b.playPiece();
                     return;
-                   // b.gameOver = true;
-                   // b.piece.gameOver = true;
-                    //b.piece.resetGame();
-                  //  b.piece = null;
-                    //b = null;
-                    
                 }
-                //b = games[0];
+
+                if(this.are) return;
+                
                 // TODO this shouldn't need to be here (when gameover)
                 if (b.gameOver)
                     return;
@@ -1058,9 +1069,10 @@ class Game {
                     b.addMove(function() {b.piece.rotate(1);b.piece.rotate(1)});
                 } else if (b.settings.keyCodes[e.keyCode] == "hd") {
                     b.piece.addKeyPressed("hd");
+
                     while(b.piece.canDrop()) {
                         b.piece.drop();
-                    };
+                    }
                     b.piece.addMove(6);
                     b.piece.drop();
                 } else if (b.settings.keyCodes[e.keyCode] == "sd") {
@@ -1092,6 +1104,7 @@ class Game {
                     b.updateHeld();
                     b.swapped = true;
                 }
+
             };
 
             var keyrelease = function(e) {
@@ -1105,6 +1118,7 @@ class Game {
                 } else if (b.settings.keyCodes[e.keyCode] == "sd") {
                     b.boolKeys.sd.down = false;
                 }
+
             };
 
             b.listeners.push(keyrelease);
@@ -1285,7 +1299,9 @@ class Game {
         // TODO
     }
     
-    playPiece() {
+
+   async playPiece() {
+          while(this.are) await sleep(1);
         if (this.paused || this.gameOver)
             return;
         if (this.piece == null) {
@@ -1302,6 +1318,7 @@ class Game {
         if (!this.gameOver && (this.piece == null || this.piece.isDropped)) {
             // every new piece's turn starts here
             this.stats.executeStatsListeners("pieceSpawn");
+
             this.piece = this.nextPieces.splice(0, 1)[0];
             this.updateQueue();
         }
@@ -1312,8 +1329,9 @@ class Game {
                 rotate = -1;
             if(rotate!=0)
                 this.piece.rotate(rotate);
+                                                        
         if (!this.gameOver) {
-            this.piece.display();
+            this.piece.display();                
             this.gravTimer = new GravityTimer(this);
             this.movesMade = 0;
         } else {
@@ -1329,7 +1347,10 @@ class Game {
             this.resetGame();
             this.playPiece();
             // this.gameOver = true;
+              
         }
+
+                    
         // set key events
     }
 
@@ -1613,7 +1634,9 @@ class Game {
     resetGravityTimer() {
         this.gravTimer = new GravityTimer(this);
     }
-
+    isEntryDelayed() {
+        return this.delayEntry;
+    }
     nextPiece() {
         if (this.bag.length == 0) {
             this.bag = Game.shuffle(["i", "j", "l", "o", "s", "t", "z"]);
@@ -1622,7 +1645,7 @@ class Game {
     }
 
     // sets the displayed screen to match the virtual board
-    updateScreen() {
+    async updateScreen() {
         var start = this.board.tiles.length - this.settings.displayedBoardHeight;
         
         var tempBoard = [];
@@ -1630,6 +1653,7 @@ class Game {
             tempBoard.push([]);
             for (var c = 0; c < 10; c++) {
                 tempBoard[r].push(this.board.tiles[r][c].p);
+              
             }
         }
 
@@ -1650,11 +1674,19 @@ class Game {
                 removedRows.push(row);
             }
         }
-            
+       // tmpboard = deepClone(this.board);
+       // tempele = [... ele];
         this.piece.linesCleared = removedRows.length;
+        if(this.piece.linesCleared >= 1 && this.piece.linesCleared <=4) {
+            this.delayEntry = true;
+        }
+        else this.delayEntry = false;
+       // ele = tempele;
         // TODO add this to constructor of piece object
-        if (removedRows.length != 0)
+        if (removedRows.length != 0) {
             this.stats.executeStatsListeners("linesCleared");
+            this.piece.setLinesCleared(removedRows.length);
+        }
         if (this.piece.spin)
             this.stats.executeStatsListeners("spin");
 
@@ -1675,6 +1707,12 @@ class Game {
             offset++;
         }
 
+        // Line Clear Delay
+        this.piece.clearShadow();
+        this.are = true;
+        if(this.delayEntry)  await sleep(500);
+        this.are = false;
+        
         // copy board to screen
         for (var row = 20; row < 40; row++) {
             for (var col = 0; col < 10; col++) {
@@ -1687,6 +1725,7 @@ class Game {
                     ele.classList.add(value);
             }
         }
+
     }
 
     download() {
@@ -2270,7 +2309,6 @@ class Piece {
         this.keysPressed = []; // fill out by key listeners then adds to record
         this.linesCleared = 0;
         this.spin = false;
-
         // adjustments for cw. For ccw multiply by -1.
         // sets are: (column adjust, row adjust)
         var rot1 = [];
@@ -2365,7 +2403,7 @@ class Piece {
         if (this.isDropped) {
             this.display();
             this.board.swapped = false;
-
+            console.log("lines cleared:  " + this.linesCleared);
             this.board.updateScreen();
             this.board.playPiece();
         }
@@ -2393,6 +2431,7 @@ class Piece {
             }
         }
         this.clearShadow();
+
     }
     
     holdIRS(){
@@ -2449,12 +2488,14 @@ class Piece {
                         var ele = this.board.board.tiles[newRow][newCol].element;
                         if (ele !== null)
                             ele.classList.add(this.piece);
-                        if (this.isDropped)
-                            this.board.board.tiles[newRow][newCol].p = this.piece;
+                        if (this.isDropped) {
+                           this.board.board.tiles[newRow][newCol].p = this.piece;
+                        }
                     }
                 }
             }
         }
+                    
         this.displayShadow();
     }
 
@@ -2529,7 +2570,9 @@ class Piece {
         this.display();
     }
 
-
+    setLinesCleared(lines) {
+        this.linesCleared = lines;
+    }
 
     // move the piece down one level: if it's at the bottom and can't go down this piece will become "dropped"
     drop() {
@@ -2538,7 +2581,7 @@ class Piece {
             this.loc = [this.loc[0] + 1, this.loc[1]];
             this.display();
         } else {
-            this.place();
+        this.place();
         }
     }
 
