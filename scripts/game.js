@@ -22,12 +22,12 @@ var gamepadAPI = {
         console.log('Gamepad disconnected.');
     },
     update: function() {
-		var isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
-		if(!isFirefox) {
+		//var isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+		//if(!isFirefox) {
 			for(var i = 0; i < 4; i++)
 				if((gp = window.navigator.getGamepads()[i]) != undefined)				// dumb gamepad update. fix.
 					gamepadAPI.controller = gp;
-		}
+		//}
 		
         gamepadAPI.buttonsCache = [];
         for (var k = 0; k < gamepadAPI.buttonsStatus.length; k++) {
@@ -1302,7 +1302,7 @@ class Game {
 
    async playPiece() {
           while(this.are) await sleep(1);
-        if (this.paused || this.gameOver)
+        if (this.paused || this.gameOver || this.are)
             return;
         if (this.piece == null) {
             this.updateQueue();
@@ -1327,8 +1327,10 @@ class Game {
                 rotate = 1;
             else if(gamepadAPI.isButtonPressed('A'))
                 rotate = -1;
-            if(rotate!=0)
+            if(rotate!=0) {
+                this.piece.addKeyPressed((rotate == 1)?"cw":"ccw");
                 this.piece.rotate(rotate);
+            }
                                                         
         if (!this.gameOver) {
             this.piece.display();                
@@ -1710,7 +1712,7 @@ class Game {
         // Line Clear Delay
         this.piece.clearShadow();
         this.are = true;
-        if(this.delayEntry)  await sleep(500);
+        if(this.delayEntry)  await sleep(484);
         this.are = false;
         
         // copy board to screen
@@ -1812,7 +1814,7 @@ class Game {
             arr: 32, //Math.floor(1000/60),
             gravityDelay: 1000,
             maxMoves: 20,
-            softDropSpeed: 25,
+            softDropSpeed: 38,//25,
             displayedBoardHeight: 20,
             displayedBoardWidth: 10,
             nextPiecesNum: 5,
@@ -2432,18 +2434,6 @@ class Piece {
         }
         this.clearShadow();
 
-    }
-    
-    holdIRS(){
-        var rotate=0;
-        // IRS TODO: fix
-        if(gamepadAPI.isButtonPressed('B'))
-            rotate = 1;
-        else if(gamepadAPI.isButtonPressed('A'))
-            rotate = -1;
-        if(rotate!=0)
-            this.rotate(rotate);
-        this.clear();
     }
         
     hold() {
