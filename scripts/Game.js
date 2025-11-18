@@ -136,12 +136,10 @@ export class Game {
             // finesse
             var rec = s.board.record;
             var p = s.board.piece;
-            //for(var move in rec.moves)
-           // console.log("move: " + move);
+
             var weightedCount = 0.0;
             for (var i = p.keysPressed.length - 1; i >= 0; i--) {
                 var j = p.keysPressed[i].key;
-                log("key: " + p.keysPressed[i].key);
                 if ("hold".indexOf(j) != -1)
                     break;
                 if ("sd".indexOf(j) != -1) {
@@ -755,11 +753,7 @@ export class Game {
         let gpButtons = [];
         let prevGpButtons = [];
         let delayEntry = false;
-        this.ihsSwapping = false;
-        
         this.are = false;
-        
-        
         var setListeners = function() {
             var b = null;
             for (var i = 0; i < games.length; i++)
@@ -785,7 +779,7 @@ export class Game {
 
             var keypress = function (e) {
                 e = e || window.event;
-                
+
                 var b = null;
                 for (var i = 0; i < games.length; i++)
                     if (this.gamepadAPI != undefined || this.parentNode.parentNode === games[i].element) {
@@ -793,9 +787,8 @@ export class Game {
                     }
                 
                 if(e.keyCode == 27){
-                    b.paused = true;
-                    //b.resetGame();
-                    //b.playPiece();
+                    b.resetGame();
+                    b.playPiece();
                     return;
                 }
 
@@ -895,7 +888,6 @@ export class Game {
 
             var keyrelease = function(e) {
                 e = e || window.event;
-        
                 if (b.settings.keyCodes[e.keyCode] == "right") {
                     b.boolKeys.right.down = false;
                     clearTimeout(b.pieceMoveTimeout["right"]);
@@ -1092,11 +1084,10 @@ export class Game {
         // TODO
     }
     
-    
 
-    async playPiece() {
+   async playPiece() {
           while(this.are) await sleep(1);
-        if (this.paused || this.gameOver)
+        if (this.paused || this.gameOver || this.are)
             return;
         if (this.piece == null) {
             this.updateQueue();
@@ -1116,38 +1107,7 @@ export class Game {
             this.piece = this.nextPieces.splice(0, 1)[0];
             this.updateQueue();
         }
-        //for (var i = 0; i < games.length; i++)
-        //    if (this != undefined && this.piece != undefined && this.gamepadAPI != undefined)//(this.gamepadAPI != undefined || this.parentNode.parentNode === games[i].element) {
-        //        b = games[i];
-       // }
-       //let  b = games[0];
-
-            // IHS TODO: fix
-            /*
-            if(!this.ihsSwapping)
-                if(gamepadAPI.isButtonPressed("LB")) {
-                    this.ihsSwapping = true;
-                    if(b.swapped = true) return;
-                    b.piece.addKeyPressed("hold");
-                    if (b.heldPiece == null)
-                        b.heldPiece = b.nextPieces.splice(0,1)[0];
-                    b.updateQueue();
-                    var temp = b.heldPiece;
-                    b.piece.hold();
-                    b.heldPiece = b.piece;
-                    b.piece = temp;
-                    //b.playPiece();
-                    b.piece.addMove(0);
-                    b.updateHeld();
-                    b.swapped = true;
-                    this.ihsSwapping = false;
-                }
-            */                                            
-        if (!this.gameOver) {
-            this.piece.display();                
-            this.gravTimer = new GravityTimer(this);
-            this.movesMade = 0;
-            
+            // IRS TODO: fix
             if(gamepadAPI.isButtonPressed('B'))
                 rotate = 1;
             else if(gamepadAPI.isButtonPressed('A'))
@@ -1156,6 +1116,11 @@ export class Game {
                 this.piece.addKeyPressed((rotate == 1)?"cw":"ccw");
                 this.piece.rotate(rotate);
             }
+                                                        
+        if (!this.gameOver) {
+            this.piece.display();                
+            this.gravTimer = new GravityTimer(this);
+            this.movesMade = 0;
         } else {
             // location.reload();
             // TODO: Game Over
@@ -1385,11 +1350,10 @@ export class Game {
                     p.classList.value = u;
                 if (u == "")
                     continue;
-                    
-                if(this.nextPieces[j] != undefined && this.nextPieces[j].piece != undefined) {
+                if(this.nextPieces[j].piece != undefined) {
 					p.style.top = (this.heldLocations[this.nextPieces[j].piece][i][0]) + "%";
 					p.style.left = (this.heldLocations[this.nextPieces[j].piece][i][1]) + "%";
-				}else log("undefined index: "  + j);	
+				}	
             }
         }
     }
@@ -1471,33 +1435,9 @@ export class Game {
         return new Piece(this.bag.pop(), this);
     }
 
-    copyBoard(tempBoard) {
-        // copy board to screen
-        for (var row = 20; row < 40; row++) {
-            for (var col = 0; col < 10; col++) {
-                var ele = this.board.tiles[row][col].element;
-                var value = tempBoard[row][col];
-                this.board.tiles[row][col].p = value;
-                if (ele.classList.length != 0)
-                    ele.classList.value = value;
-                else if (value != "")
-                    ele.classList.add(value);
-            }
-        }
-    }
     // sets the displayed screen to match the virtual board
     async updateScreen() {
         var start = this.board.tiles.length - this.settings.displayedBoardHeight;
-        
-        
-        var duplicate = [];
-        for (var r = 0; r < 40; r++) {
-            duplicate.push([]);
-            for (var c = 0; c < 10; c++) {
-                duplicate[r].push(this.board.tiles[r][c].p);
-              
-            }
-        }
         
         var tempBoard = [];
         for (var r = 0; r < 40; r++) {
@@ -1510,8 +1450,6 @@ export class Game {
 
         // remove filled rows
         var removedRows = [];
-        
-        // Do row clear animation
         for (var row = start; row < tempBoard.length; row++) {
             var filledUp = true;
             for (var col = 0; col < tempBoard[0].length; col++) {
@@ -1522,21 +1460,19 @@ export class Game {
             }
             if (filledUp) {
                 for (var col = 0; col < tempBoard[0].length; col++) {
-                    tempBoard[row][col] = "removeRow";
+                    tempBoard[row][col] = "";
                 }
                 removedRows.push(row);
             }
         }
-        
-
+       // tmpboard = deepClone(this.board);
+       // tempele = [... ele];
         this.piece.linesCleared = removedRows.length;
-        
         if(this.piece.linesCleared >= 1 && this.piece.linesCleared <=4) {
             this.delayEntry = true;
         }
         else this.delayEntry = false;
-
-
+       // ele = tempele;
         // TODO add this to constructor of piece object
         if (removedRows.length != 0) {
             this.stats.executeStatsListeners("linesCleared");
@@ -1545,18 +1481,6 @@ export class Game {
         if (this.piece.spin)
             this.stats.executeStatsListeners("spin");
 
-        this.copyBoard(tempBoard);
-        
-        // Line Clear Delay
-        this.piece.clearShadow();
-        this.are = true;
-        if(this.delayEntry)  await sleep(484);
-        this.are = false;
-        
-        //restore board
-        this.copyBoard(duplicate);
-                
-                
         // compress
         var swap = function(board, row1, row2) {
             var arr1 = board[row1];
@@ -1574,7 +1498,24 @@ export class Game {
             offset++;
         }
 
-        this.copyBoard(tempBoard);
+        // Line Clear Delay
+        this.piece.clearShadow();
+        this.are = true;
+        if(this.delayEntry)  await sleep(484);
+        this.are = false;
+        
+        // copy board to screen
+        for (var row = 20; row < 40; row++) {
+            for (var col = 0; col < 10; col++) {
+                var ele = this.board.tiles[row][col].element;
+                var value = tempBoard[row][col];
+                this.board.tiles[row][col].p = value;
+                if (ele.classList.length != 0)
+                    ele.classList.value = value;
+                else if (value != "")
+                    ele.classList.add(value);
+            }
+        }
 
     }
 
@@ -1655,7 +1596,6 @@ export class Game {
     }
 
     // returns object with all settings: use .label to get a list of labels of the settings
-    //TODO: do landed when  canGoDown==false and lockTimer so the piece doesn't lock so quickly
     static getDefaultSettings() {
         var settings = {
             das: 167, //
@@ -1682,7 +1622,7 @@ export class Game {
                 69: "ccw",
                 82: "cw",
                 74: "left",
-                68: "hd",
+                
                 75: "sd",
                 76: "right",
                 

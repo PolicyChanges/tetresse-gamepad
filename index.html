@@ -2,11 +2,24 @@
 
 <head>
     <title>Tetresse</title>
-    <script src="scripts/game.js"></script>
+    <script type="module" src="scripts/Game.js"></script>
+    <script type="module" src="scripts/main.js"></script>
+   <!-- <script type="module" scr="scripts/utils.js"></script>-->
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/basic page.css">
 </head>
-<body onload="setup();">
+<!--<body onload="setup();">-->
+<body>
+    <script type="module">
+        import { setup } from './scripts/main.js';
+        
+        //document.addEventListener('DOMContentLoaded', () => {
+        //            setupd();
+        //});
+        window.onload = () => {
+            setup();
+        };
+    </script>
     <div id="page-area-container">
         <div id="page-area">
             <div class="title">Tetresse</div>
