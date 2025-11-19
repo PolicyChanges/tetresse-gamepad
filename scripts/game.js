@@ -140,7 +140,7 @@ export class Game {
             var weightedCount = 0.0;
             for (var i = p.keysPressed.length - 1; i >= 0; i--) {
                 var j = p.keysPressed[i].key;
-                log("key: " + p.keysPressed[i].key);
+                log("key: " + p.keysPressed[p.keysPressed.length-i-1].key);
                 if ("hold".indexOf(j) != -1)
                     break;
                 if ("sd".indexOf(j) != -1) {
@@ -1808,7 +1808,7 @@ export class Game {
             arr: 32, //Math.floor(1000/60),
             gravityDelay: 1000,
             maxMoves: 20,
-            softDropSpeed: 38,//25,
+            softDropSpeed: 38,
             displayedBoardHeight: 20,
             displayedBoardWidth: 10,
             nextPiecesNum: 5,
