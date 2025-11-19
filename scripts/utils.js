@@ -18,6 +18,7 @@ export function getCookie(name) {
         }
         if (c.indexOf(name) == 0) {
             var rtnstr = c.substring(name.length, c.length);
+            log(rtnstr);
             return unescape(rtnstr);
         }
     }
@@ -28,10 +29,13 @@ export function getCookie(name) {
 // TODO add these as static functions to game class
 export function error(message) {
     throw new Error("[game.js]: " + message);
+     //debugger;
 }
 
 export function log(message) {
-    console.log("Log: " + message);
+    var supressLog = true;
+    if(!supressLog)
+        console.log("Log: " + message);
 }
 
 export function addEvent(element, eventName, callback) {

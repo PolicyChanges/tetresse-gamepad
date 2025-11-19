@@ -240,10 +240,10 @@ div .nobox {
 }
 
 @keyframes rowanimation {
-  0%   {background: white;border: 1px solid grey;}
-  25%  {background: grey;border: 1px solid dimgrey;}
-  50%  {background: dimgrey;border: 1px solid grey;}
-  100% {background: black;border: 1px solid black;}
+  0%   {background-color: hsl(300, 2%, 100%);border: 1px solid hsl(300, 2%, 50%);}
+  25%  {background-color: hsl(300, 2%, 66%);border: 1px solid hsl(300, 2%, 66%);}
+  50%  {background-color: hsl(300, 2%, 33%);border: 1px solid hsl(300, 2%, 33%);}
+  100% {background-color: hsl(300, 2%, 0%);border: 1px solid hsl(300, 2%, 10%);}
 }
 
 div .removeRow{
@@ -252,12 +252,12 @@ div .removeRow{
     -webkit-box-sizing: border-box;
     display: table-cell;
     float: left;
-    
-  width: 10%;//100px;
-  height: 5%;//100px;
- //background-color: red;
-  animation-name: rowanimation;
-  animation-duration: .5s;
+    width: 10%;
+    height: 5%;
+    background-color: hsl(300, 100%, 0%);
+    border: 1px solid hsl(300, 2%, 10%);
+    animation-name: rowanimation;
+    animation-duration: .5s;
 }
 
 .tetresse-options {

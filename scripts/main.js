@@ -15,11 +15,11 @@ export var gamepadAPI = {
     connect: function(evt) {
         gamepadAPI.controller = evt.gamepad;
         gamepadAPI.turbo = false;
-        console.log('Gamepad connected.');
+        log('Gamepad connected.');
     },
     disconnect: function(evt) {
         gamepadAPI.turbo = false;
-		  console.log(
+		  log(
 			"Gamepad connected at index %d: %s. %d buttons, %d axes.",
 			e.gamepad.index,
 			e.gamepad.id,
@@ -27,7 +27,7 @@ export var gamepadAPI = {
 			e.gamepad.axes.length,
 		  );
         delete gamepadAPI.controller;
-        console.log('Gamepad disconnected.');
+        log('Gamepad disconnected.');
     },
     update: function() {
 		//var isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
@@ -48,7 +48,6 @@ export var gamepadAPI = {
         var pressed = [];
         if (c.buttons) {
             for (var b = 0, t = c.buttons.length; b < t; b++) {
-             //console.log(c.buttons[b]);
                 if (c.buttons[b].pressed) {
                     pressed.push(gamepadAPI.buttons[b]);
                 }
@@ -449,7 +448,6 @@ export class PageStat {
                 if (this.elements[i].matches("div")) { // TODO redesign
                     this.elements[i].innerHTML = "" + v + (this.append == null ? "" : this.append);
                 } else {
-                    console.log(this.name);
                     this.elements.splice(i, 1);
                     i--;
                 }
@@ -580,7 +578,8 @@ export class GravityTimer {
             if (board.gravNum != 0)
                 return;
             
-            board.piece.drop();
+            if(!board.piece.landed)
+                board.piece.drop();
             
             if (board.gravTimer != null)
                 board.gravTimer = new GravityTimer(board);
@@ -605,6 +604,9 @@ export class Piece {
         this.keysPressed = []; // fill out by key listeners then adds to record
         this.linesCleared = 0;
         this.spin = false;
+        this.landed = false;
+        this.lockTimer = new Date().getTime();
+        
         // adjustments for cw. For ccw multiply by -1.
         // sets are: (column adjust, row adjust)
         var rot1 = [];
@@ -679,6 +681,18 @@ export class Piece {
         this.loc = this.getDefaultLoc();
         this.addKeyPressed("hold"); // TODO: fix - super jank
         this.addMove(8);
+        var movesMade = 0
+        /*TODO: IRS on reset
+         * if(gamepadAPI.isButtonPressed('B'))
+            rotate = 1;
+        else if(gamepadAPI.isButtonPressed('A'))
+            rotate = -1;
+        if(rotate!=0) {
+            this.addKeyPressed((rotate == 1)?"cw":"ccw");
+            var rotFunc = (rotate == 1)?function(){this.board.piece.rotate(1)}:function(){this.board.piece.rotate(-1)};
+            this.board.addMove(rotFunc);
+            movesMade = 1;
+        }*/    
         this.display();
     }
 
@@ -699,7 +713,6 @@ export class Piece {
         if (this.isDropped) {
             this.display();
             this.board.swapped = false;
-            console.log("lines cleared:  " + this.linesCleared);
             this.board.updateScreen();
             this.board.playPiece();
         }
@@ -859,15 +872,31 @@ export class Piece {
 
     // move the piece down one level: if it's at the bottom and can't go down this piece will become "dropped"
     drop() {
+        if(this.isDropped == true) {
+            this.place();
+            const soundHd = new Audio('./snd/sound_hd.ogg');
+            soundHd.volume = 0.5;
+            soundHd.play();
+        }
         if (this.canDrop()) {
             this.clear();
             this.loc = [this.loc[0] + 1, this.loc[1]];
             this.display();
-        } else {
-        this.place();
-        const soundHd = new Audio('./snd/sound_hd.ogg');
-        soundHd.volume = 0.5;
-        soundHd.play();
+        } 
+        else 
+        {
+            if(this.landed == false) {
+                this.landed = true;
+                this.lockTimer = this.startTime = new Date().getTime();
+            }else if( new Date().getTime() - this.lockTimer >= 15000) // 15000 is 15 seconds of lock delay
+                this.isDropped = true;
+                
+           /* if(this.isDropped == true) {
+                this.place();
+                const soundHd = new Audio('./snd/sound_hd.ogg');
+                soundHd.volume = 0.5;
+                soundHd.play();
+            }*/
         }
     }
 
