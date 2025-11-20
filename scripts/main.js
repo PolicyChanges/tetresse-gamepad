@@ -2,19 +2,59 @@ import { Game } from './game.js'
 import { setCookie, getCookie, error, log, addEvent, addChild, deepClone, sleep } from './utils.js';
 
 export var games;
+ 
+//var soundHd = new Audio('./snd/sound_hd.ogg');
+//var soundShift = new Audio('./snd/sound_shift.ogg');
 
-//var hdAudio = new Audio('./snd/sound_hd.ogg');
-//var shiftAudio = new Audio('./snd/sound_shift.ogg');
+export var Audio = {
+    audioContext: null,
+    soundHd: null,
+    soundShift: null,
+    initAudio: async() => {
+        Audio.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        Audio.soundHd = await Audio.loadSound('./snd/sound_hd.ogg');
+        Audio.soundShift = await Audio.loadSound('./snd/sound_shift.ogg');
+    },
+    loadSound: async(url) => {
+        const response = await fetch(url);
+        const arrayBuffer = await response.arrayBuffer();
+        return await Audio.audioContext.decodeAudioData(arrayBuffer);
+    },
+    playHd: function() {
+        if (!this.soundHd) {
+            console.error("Audio buffer not loaded yet.");
+            return;
+        }
+        const source = Audio.audioContext.createBufferSource();
+        source.buffer = Audio.soundHd;
+        source.connect(Audio.audioContext.destination);
+        source.start(0);
+    },
+    playShift: function() {
+        if (!Audio.soundShift) {
+            console.error("Audio buffer not loaded yet.");
+            return;
+        }
+        const source = Audio.audioContext.createBufferSource();
+        source.buffer = Audio.soundShift;
+        source.connect(Audio.audioContext.destination);
+        source.start(0);
+    },
 
-//hdAudio.load();
-//shiftAudio.load();
+};
+
 
 export var gamepadAPI = {
     controller: {},
     turbo: false,
+    primaryGamepadIndex: -1,
     connect: function(evt) {
         gamepadAPI.controller = evt.gamepad;
         gamepadAPI.turbo = false;
+        for(var i = 0; i < 4; i++){
+            let gp = window.navigator.getGamepads()[i];
+            if(gp != undefined) gamepadAPI.primaryGamepadIndex = i;
+        }
         log('Gamepad connected.');
     },
     disconnect: function(evt) {
@@ -26,19 +66,20 @@ export var gamepadAPI = {
 			e.gamepad.buttons.length,
 			e.gamepad.axes.length,
 		  );
+        primaryGamepadIndex = -1;
         delete gamepadAPI.controller;
         log('Gamepad disconnected.');
     },
     update: function() {
 		//var isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
 		//if(!isFirefox) {
-			for(var i = 0; i < 4; i++){
-                let gp = window.navigator.getGamepads()[i];
-				if(gp != undefined)				// dumb gamepad update. fix.
-					gamepadAPI.controller = gp;
-                }
+		//	for(var i = 0; i < 4; i++){
+        //        let gp = window.navigator.getGamepads()[i];
+		//		if(gp != undefined)				// dumb gamepad update. fix.
+		//			gamepadAPI.controller = gp;
+         //   }
 		//}
-		
+		if(gamepadAPI.primaryGamepadIndex != -1) gamepadAPI.controller = window.navigator.getGamepads()[gamepadAPI.primaryGamepadIndex];
         gamepadAPI.buttonsCache = [];
         for (var k = 0; k < gamepadAPI.buttonsStatus.length; k++) {
             gamepadAPI.buttonsCache[k] = gamepadAPI.buttonsStatus[k];
@@ -119,9 +160,13 @@ window.addEventListener("gamepaddisconnected", gamepadAPI.disconnect);
 /**
  * setup - goes through page and replaces elements that contain class "game" with a game
  */
+ 
+
 export function setup() {
     games = [];
-
+    
+    Audio.initAudio();
+    
     var ele, ele1, ele2;
     var gameArr = document.getElementsByClassName("game");
 
@@ -435,7 +480,7 @@ export class PageStat {
                 else
                     v = (1.0 * this.value / p).toFixed(3);
             } else if (this.type == "t") {
-                var s = ((this.value % 60000) / 1000).toFixed(1);
+                var s = ((this.value % 60000) / 1000).toFixed(3);
                 var m = Math.floor((this.value / 60000) % 60);
                 var h = Math.floor((this.value / 3600000));
                 v = (h == 0 ? "" : h + ":") + (m == 0 ? "" : m + ":") + s;
@@ -443,6 +488,7 @@ export class PageStat {
                 error("Type not recognized: " + this.type);
             }
         }
+        
         if (this.elements != null) {
             for (var i = 0; i < this.elements.length; i++) {
                 if (this.elements[i].matches("div")) { // TODO redesign
@@ -506,12 +552,14 @@ export class Clock {
         if (this.startTime != null)
             this.pausedTime += new Date().getTime() - this.startTime;
         this.startTime = new Date().getTime();
-        this.timer = setTimeout(this.loop, this.interval, this.board, this);
+        this.timer = requestAnimationFrame(()=>this.loop(this.board, this));
+        
+        
     }
 
     loop(b, c) {
         c.func(b);
-        c.timer = setTimeout(c.loop, c.interval, b, c);
+        c.timer = requestAnimationFrame(()=>c.loop(b,c));
     }
 
     complete() {
@@ -522,7 +570,8 @@ export class Clock {
             this.resume();
         else
             this.pause();
-        clearTimeout(this.timer);
+        cancelAnimationFrame(this.timer);
+        this.timer = undefined;
     }
 
     getStartTime() {
@@ -578,7 +627,7 @@ export class GravityTimer {
             if (board.gravNum != 0)
                 return;
             
-            if(!board.piece.landed)
+            //if(!board.piece.landed)
                 board.piece.drop();
             
             if (board.gravTimer != null)
@@ -874,9 +923,7 @@ export class Piece {
     drop() {
         if(this.isDropped == true) {
             this.place();
-            const soundHd = new Audio('./snd/sound_hd.ogg');
-            soundHd.volume = 0.5;
-            soundHd.play();
+            Audio.playHd();
         }
         if (this.canDrop()) {
             this.clear();
@@ -889,15 +936,7 @@ export class Piece {
                 this.landed = true;
                 this.lockTimer = this.startTime = new Date().getTime();
             }else if( new Date().getTime() - this.lockTimer >= 15000) // 15000 is 15 seconds of lock delay
-                this.isDropped = true;
-                
-           /* if(this.isDropped == true) {
-                this.place();
-                const soundHd = new Audio('./snd/sound_hd.ogg');
-                soundHd.volume = 0.5;
-                soundHd.play();
-            }*/
-        }
+                this.isDropped = true;        }
     }
 
     canDrop() {
@@ -926,7 +965,8 @@ export class Piece {
                 this.clear();
                 break;
             }
-            (new Audio('./snd/sound_shift.ogg')).play();
+            Audio.playShift();
+            
             this.loc = newLoc;
         }
         this.display();

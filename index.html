@@ -1,21 +1,13 @@
 <!-- TODO: add rest of stats to stats options, add scroll to overflowing dropdown menu, add vertical constraint so board doesn't go off bottom of page -->
 
 <head>
-    <title>Tetresse</title>
-    <script type="module" src="scripts/Game.js"></script>
-    <script type="module" src="scripts/main.js"></script>
-   <!-- <script type="module" scr="scripts/utils.js"></script>-->
+    <title>Tetresse</title>    <script type="module" src="scripts/main.js"></script>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/basic page.css">
 </head>
-<!--<body onload="setup();">-->
 <body>
     <script type="module">
         import { setup } from './scripts/main.js';
-        
-        //document.addEventListener('DOMContentLoaded', () => {
-        //            setupd();
-        //});
         window.onload = () => {
             setup();
         };

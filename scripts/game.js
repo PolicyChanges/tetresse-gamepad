@@ -116,6 +116,7 @@ export class Game {
             // s.executeStatsListeners(p.piece + "spin");
         });
         this.stats.addStatsListener("piecePlaced", function(s) {
+            while(this.are) utils.wait(1);//if(this.are == true) return;
             s.piecesPlaced.add(1);
 
             // update pp TODO update pp for regular lines cleared and make easier (repeated code in tick)
@@ -138,9 +139,11 @@ export class Game {
             var p = s.board.piece;
             
             var weightedCount = 0.0;
+            
+            var keysPressedStr = "keys pressed: ";
             for (var i = p.keysPressed.length - 1; i >= 0; i--) {
                 var j = p.keysPressed[i].key;
-                log("key: " + p.keysPressed[p.keysPressed.length-i-1].key);
+                keysPressedStr.concat(p.keysPressed[p.keysPressed.length-i-1].key);
                 if ("hold".indexOf(j) != -1)
                     break;
                 if ("sd".indexOf(j) != -1) {
@@ -172,6 +175,7 @@ export class Game {
                 if (weightedCount - optimalWeight > 0) {
                     s.finesse.add(weightedCount - optimalWeight);
                     s.finessePrintout.updateValue(str); // TODO add finesse error (tell user what they did that was wrong)
+                    log(keysPressedStr + " ideal: " + str);
                     if (s.board.settings.redoFinesseErrors) {
                         p.reset();
                         //var audioWrong = new Audio('./snd/sound_wrong.ogg');
@@ -243,39 +247,39 @@ export class Game {
         Game.parentElement = undefined;
     }
     
-        function getKeyFromKeyCode(keyCode) {
-  switch (keyCode) {
-    case 8:
-      return 'Backspace';
-    case 9:
-      return 'Tab';
-    case 13:
-      return 'Enter';
-    case 16:
-      return 'Shift';
-    case 17:
-      return 'Control';
-    case 18:
-      return 'Alt';
-    case 27:
-      return 'Escape';
-    case 32:
-      return ' '; // Spacebar
-    case 37:
-      return 'ArrowLeft';
-    case 38:
-      return 'ArrowUp';
-    case 39:
-      return 'ArrowRight';
-    case 40:
-      return 'ArrowDown';
-    // Add more mappings as needed for other keys
-    default:
-      // For alphanumeric keys, you might need to convert using String.fromCharCode()
-      // This approach has limitations and might not be accurate for all keyCodes
-      return String.fromCharCode(keyCode); 
-  }
-}
+    function getKeyFromKeyCode(keyCode) {
+      switch (keyCode) {
+        case 8:
+          return 'Backspace';
+        case 9:
+          return 'Tab';
+        case 13:
+          return 'Enter';
+        case 16:
+          return 'Shift';
+        case 17:
+          return 'Control';
+        case 18:
+          return 'Alt';
+        case 27:
+          return 'Escape';
+        case 32:
+          return ' '; // Spacebar
+        case 37:
+          return 'ArrowLeft';
+        case 38:
+          return 'ArrowUp';
+        case 39:
+          return 'ArrowRight';
+        case 40:
+          return 'ArrowDown';
+        // Add more mappings as needed for other keys
+        default:
+          // For alphanumeric keys, you might need to convert using String.fromCharCode()
+          // This approach has limitations and might not be accurate for all keyCodes
+          return String.fromCharCode(keyCode); 
+      }
+    }
 
     function dispatchKeybind(type, key, addButton) {
        //log("event: " + `${key} ${type}`);
@@ -293,40 +297,40 @@ export class Game {
     }
 
 
-
+    this.keyMap = new Map([
+              [0, 69], //A-'z'],
+              [1, 38], //B-'x'],
+              [2, 65], //X-A
+              [3, 66], //Y-B
+              [4, 16], //Left Bumper-'ShiftLeft'],
+              [5, 32], //Right Bumper-' '],		  
+              [6, undefined], //Axis-Left-
+              [7, 39], //DPad-Right-ArrowRight
+              [8, 27], //Back Button-Escape
+              [9, 13], //Start-Enter
+              [10, undefined], //?
+              [11, undefined], //Axis-right
+              [12, 68], //DPadUp-D
+              [13, 40], //DPad-Down-'ArrowDown'],
+              [14, 37], //DPad-Left-'ArrowLeft'],
+              //[15, 0],
+            ]);
    function setKeybind()
     {
         this.gpKeybindButtons = gamepadAPI.update();
         if(this.gpKeyPrevbindButtons == undefined) this.gpKeyPrevbindButtons = this.gpKeybindButtons;
         
         if(gamepadAPI.controller || false){
-        const keyMap = new Map([
-                  [0, 69], //A-'z'],
-                  [1, 38], //B-'x'],
-                  [2, 65], //X-A
-                  [3, 66], //Y-B
-                  [4, 16], //Left Bumper-'ShiftLeft'],
-                  [5, 32], //Right Bumper-' '],		  
-                  [6, undefined], //Axis-Left-
-                  [7, 39], //DPad-Right-ArrowRight
-                  [8, 27], //Back Button-Escape
-                  [9, 13], //Start-Enter
-                  [10, undefined], //?
-                  [11, undefined], //Axis-right
-                  [12, 68], //DPadUp-D
-                  [13, 40], //DPad-Down-'ArrowDown'],
-                  [14, 37], //DPad-Left-'ArrowLeft'],
-                  //[15, 0],
-                ]);
+
             for(let i = 0; i < 15; i++){
             let isContainedCurrent = this.gpKeybindButtons.includes(gamepadAPI.buttons[i]);
             let isContainedPrevious = this.gpKeyPrevbindButtons.includes(gamepadAPI.buttons[i]);
                 if (isContainedCurrent != isContainedPrevious){
                     if(isContainedCurrent) {
-                        dispatchKeybind("keydown", keyMap.get(i), this); 
+                        dispatchKeybind("keydown", this.keyMap.get(i), this); 
 
                     } else  {
-                        dispatchKeybind("keyup", keyMap.get(i), this); 
+                        dispatchKeybind("keyup", this.keyMap.get(i), this); 
                     }
                 
                 }
@@ -403,8 +407,6 @@ export class Game {
                 v.classList.add(this.name + "-menu-keybinds-button");
                 v.classList.add(this.name + "-ar");
                 v.tabIndex = "2";
-                this.keybindElements.push(v);
-                
                 addEvent(v, "click", Game.addKeybind);
                 addEvent(v, "click", this.setActiveElement);
             }
@@ -794,7 +796,7 @@ export class Game {
         if (this.settings.playable)
             this.initialize();
     }
-
+    
     recordAddMove(m) {
         if (!this.settings.playable)
             return;
@@ -848,7 +850,6 @@ export class Game {
     /**
      * getGameNumber: parses the div ID and returns the game number (in format "game-112-menu-item" returns 112)
      */
-    keybindElements = [];
     static getGameNumber(divID) {
         divID = divID.substring(divID.indexOf("-") + 1);
         return divID.substring(0, divID.indexOf("-"));
@@ -1133,17 +1134,7 @@ export class Game {
                 isGpHandlersInit = true;
             }
         };		
-
-        
         setInterval(this.pollGamepad.bind(this), 16);
-        //setInterval(this.setKeybind, 200);
-        //setInterval(Game.addKeybind.bind(this.pollGamepad),200);
-        //Game.addKeybind.bind(this.pollGamepad);
-      //  for(var i = 0; i < games[0].keybindElements.length; i++) {
-       //     addEvent(games[0].keybindElements[i], "click", Game.addKeybind);
-      //  }
-        //setInterval(this.pollGamepad.bind(this), 16);
-        
         };
         var unsetListeners = function() {
             var b = null;
@@ -1222,7 +1213,7 @@ export class Game {
     
 
     async playPiece() {
-          while(this.are) await sleep(1);
+        while(this.are) await sleep(4);
         if (this.paused || this.gameOver)
             return;
         if (this.piece == null) {
@@ -1243,10 +1234,7 @@ export class Game {
             this.piece = this.nextPieces.splice(0, 1)[0];
             this.updateQueue();
         }
-        //for (var i = 0; i < games.length; i++)
-        //    if (this != undefined && this.piece != undefined && this.gamepadAPI != undefined)//(this.gamepadAPI != undefined || this.parentNode.parentNode === games[i].element) {
-        //        b = games[i];
-       // }
+
        let  b = games[0];
 
             // IHS TODO: fix
@@ -1668,16 +1656,18 @@ export class Game {
         if (this.piece.spin)
             this.stats.executeStatsListeners("spin");
 
-        this.copyBoard(tempBoard);
+       
         
         // Line Clear Delay
         this.piece.clearShadow();
         this.are = true;
+         this.copyBoard(tempBoard);
         if(this.delayEntry)  await sleep(484);
-        this.are = false;
-        
         //restore board
         this.copyBoard(duplicate);
+        this.are = false;
+        
+
                 
         // compress
         var swap = function(board, row1, row2) {
@@ -1808,7 +1798,7 @@ export class Game {
             arr: 32, //Math.floor(1000/60),
             gravityDelay: 1000,
             maxMoves: 20,
-            softDropSpeed: 38,
+            softDropSpeed: 60,//38,
             displayedBoardHeight: 20,
             displayedBoardWidth: 10,
             nextPiecesNum: 5,

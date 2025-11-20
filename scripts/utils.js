@@ -29,11 +29,11 @@ export function getCookie(name) {
 // TODO add these as static functions to game class
 export function error(message) {
     throw new Error("[game.js]: " + message);
-     //debugger;
+    debugger;
 }
 
 export function log(message) {
-    var supressLog = true;
+    var supressLog = false;
     if(!supressLog)
         console.log("Log: " + message);
 }
