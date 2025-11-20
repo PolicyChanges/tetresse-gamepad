@@ -1,4 +1,4 @@
-import { setCookie, getCookie, error, log, addEvent, addChild, deepClone, sleep } from './utils.js';
+import { setCookie, getCookie, error, log, addEvent, addChild, deepClone, sleep, wait, fastEmptyArray } from './utils.js';
 import { games, gamepadAPI, Piece, PageStat, GravityTimer, Clock, Stats } from './main.js';
 
 export class Game {
@@ -870,7 +870,6 @@ export class Game {
         this.heldLocations = {"i":[[37.5,0], [37.5, 25], [37.5, 50], [37.5, 75]], "j":[[25,12.5],[50,12.5],[50,37.5],[50,62.5]], "l":[[25,62.5],[50,12.5],[50,37.5],[50,62.5]], "o":[[25,25],[25,50],[50,25],[50,50]], "s":[[25,37.5],[25,62.5],[50,12.5],[50,37.5]], "t":[[25,37.5],[50,12.5],[50,37.5],[50,62.5]], "z":[[25,12.5],[25,37.5],[50,37.5],[50,62.5]]};
 
         this.listeners = [];
-        let isGpHandlersInit = false;
         let gpButtons = [];
         let prevGpButtons = [];
         let delayEntry = false;
@@ -1124,15 +1123,6 @@ export class Game {
             }
             this.gamepadCtx = this;
             
-            if(isGpHandlersInit == false){//isGpHandlersInit == false) {
-                //b.listeners.push(keyrelease);
-                //b.listeners.push(keypress);
-                //addEvent(this, "keyup", keyrelease);
-                //addEvent(this, "keydown", keypress);
-                //addEvent(this, "keypress", keypress);
-
-                isGpHandlersInit = true;
-            }
         };		
         setInterval(this.pollGamepad.bind(this), 16);
         };
@@ -1798,7 +1788,7 @@ export class Game {
             arr: 32, //Math.floor(1000/60),
             gravityDelay: 1000,
             maxMoves: 20,
-            softDropSpeed: 60,//38,
+            softDropSpeed: 38,
             displayedBoardHeight: 20,
             displayedBoardWidth: 10,
             nextPiecesNum: 5,

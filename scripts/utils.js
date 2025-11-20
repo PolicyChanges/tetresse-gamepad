@@ -29,13 +29,19 @@ export function getCookie(name) {
 // TODO add these as static functions to game class
 export function error(message) {
     throw new Error("[game.js]: " + message);
-    debugger;
+    //debugger;
 }
 
 export function log(message) {
     var supressLog = false;
     if(!supressLog)
         console.log("Log: " + message);
+}
+
+export function fastEmptyArray(array) {
+    while (array.length > 0) {
+        array.pop();
+    } 
 }
 
 export function addEvent(element, eventName, callback) {

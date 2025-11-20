@@ -1,5 +1,5 @@
 import { Game } from './game.js'
-import { setCookie, getCookie, error, log, addEvent, addChild, deepClone, sleep } from './utils.js';
+import { setCookie, getCookie, error, log, addEvent, addChild, deepClone, sleep, wait, fastEmptyArray } from './utils.js';
 
 export var games;
  
@@ -418,6 +418,22 @@ export class PageStat {
             if (args.length > 5) linked = args[5];
         }
 
+            
+        this.elementsInvalidated = [];
+        this.valueSet = -1;
+        setInterval(()=> {
+        if(this.elementsInvalidated == undefined || this.elementsInvalidated.length == 0) return;
+        for (var i = 0; i < this.elementsInvalidated.length; i++) {
+            if (this.elementsInvalidated[i].matches("div")) { // TODO 
+                if(this.valueSet != -1)
+                   // document.getElementById(this.elementsInvalidated[i].id).textContent = "" + this.valueSet + (append == null ? "" : append);
+                    this.elementsInvalidated[i].innerHTML = "" + this.valueSet + (append == null ? "" : append);
+            } else {
+                this.elementsInvalidated.splice(i, 1);
+                i--;
+            }
+            fastEmptyArray(this.elementsInvalidated);
+        }}, 200);
         this.setup(name, stats, startValue, type, append, linked);
     }
 
@@ -429,6 +445,7 @@ export class PageStat {
         this.append = (append == null ? "" : append);
         this.linked = linked;
         this.updateElements();
+    
         stats.psArr.push(this);
     }
 
@@ -461,8 +478,8 @@ export class PageStat {
         var eles = document.getElementsByClassName(toSearch);
         this.addElements(eles);
     }
-
-    updateValue(value) {
+   
+    async updateValue(value) {
         this.value = value
         
         if (this.linked != null)
@@ -491,16 +508,14 @@ export class PageStat {
         
         if (this.elements != null) {
             for (var i = 0; i < this.elements.length; i++) {
-                if (this.elements[i].matches("div")) { // TODO redesign
-                    this.elements[i].innerHTML = "" + v + (this.append == null ? "" : this.append);
-                } else {
-                    this.elements.splice(i, 1);
-                    i--;
-                }
+                //while(this.elementsInvalidated == undefined)sleep(10); 
+                this.elementsInvalidated.push(this.elements[i]);
+                this.valueSet = v;
             }
         }
     }
 
+        
     update(type) {
         if (this.type == type) // TODO bug: if this is "ps" it will go through linked
             this.add(0); // haha saving space
@@ -552,6 +567,9 @@ export class Clock {
         if (this.startTime != null)
             this.pausedTime += new Date().getTime() - this.startTime;
         this.startTime = new Date().getTime();
+        
+        //this.timer = setTimeout(this.loop,this.interval, this.board, this);
+        //(()=>this.loop(this.board, this));
         this.timer = requestAnimationFrame(()=>this.loop(this.board, this));
         
         
@@ -559,6 +577,8 @@ export class Clock {
 
     loop(b, c) {
         c.func(b);
+        
+        //c.timer = setTimeout(c.loop,c.interval, c.board, c);
         c.timer = requestAnimationFrame(()=>c.loop(b,c));
     }
 
