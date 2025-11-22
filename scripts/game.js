@@ -1,6 +1,18 @@
 import { setCookie, getCookie, error, log, addEvent, addChild, deepClone, sleep, wait, fastEmptyArray } from './utils.js';
 import { games, gamepadAPI, Piece, PageStat, GravityTimer, Clock, Stats } from './main.js';
 
+var isKeyboardKeyDown = [];
+
+function keyDown(e) {
+    isKeyboardKeyDown[e.keyCode] = true;
+}
+function keyUp(e) {
+    isKeyboardKeyDown[e.keyCode] = false;
+}
+
+document.addEventListener('keydown', keyDown.bind(this));
+document.addEventListener('keyup', keyUp.bind(this));
+
 export class Game {
     /**
      * args - array of arguments
@@ -962,11 +974,15 @@ export class Game {
                         clearTimeout(b.pieceMoveTimeout["left"]);
                     b.pieceMoveTimeout["left"] = setTimeout(Game.repeatKeys, b.settings.das, m, b.boolKeys.left, b.settings.arr);
                 } else if (b.settings.keyCodes[e.keyCode] == "cw") {
-                    b.piece.addKeyPressed("cw");
-                    b.addMove(function() {b.piece.rotate(1)});
+                     if(!e.repeat) {
+                        b.piece.addKeyPressed("cw");
+                        b.addMove(function() {b.piece.rotate(1)});
+                    }
                 } else if (b.settings.keyCodes[e.keyCode] == "ccw") {
-                    b.piece.addKeyPressed("ccw");
-                    b.addMove(function() {b.piece.rotate(-1)});
+                    if(!e.repeat) {
+                        b.piece.addKeyPressed("ccw");
+                        b.addMove(function() {b.piece.rotate(-1)});
+                    }
                 } else if (b.settings.keyCodes[e.keyCode] == "180") {
                     b.piece.addKeyPressed("180");
                     b.addMove(function() {b.piece.rotate(1);b.piece.rotate(1)});
@@ -1034,97 +1050,72 @@ export class Game {
            addEvent(this, "keydown", keypress);
         
     
-        this.dispatchKeyEvent = function(type, key, self) {
-           //log("event: " + `${key} ${type}`);
-          const event = new KeyboardEvent(type, {
-            isTrusted: true,
-            key: key,
-            keyCode:key,
-            code: `${key}`,//`Key${key.toUpperCase()}`, // Adjust for specific keys
-            bubbles: true,
-            cancelable: true,
-          });
-            self.dispatchEvent(event);
-        }
-
-        var updateGamepad = function () {
-           gpButtons = gamepadAPI.update();
-        }
-        function saveButtons() {
-            prevGpButtons = gpButtons;
-        }
-        function gamepadEnabled() {
-            return gamepadAPI.controller || false;
-        }
-
-        this.pollGamepad = function() 
-        {
-            updateGamepad();
-            
-            if(gamepadEnabled()){
-           /*     var b = null;
-                for (var i = 0; i < games.length; i++)
-                    if (this.gamepadAPI != undefined || this.parentNode.parentNode === games[i].element) {
-                        b = games[i];
-                    }
-                                keyCodes: {
-                39: "right",
-                37: "left",
-                38: "cw",
-                90: "ccw",
-                40: "sd",
-                32: "hd",
-                67: "hold",
-                16: "hold",
-                87: "hold",
-                69: "ccw",
-                82: "cw",
-                74: "left",
-                75: "sd",
-                76: "right",
-            },
-                buttons: [ // XBox360 layout 
-   		'A', 'B', 'X', 'Y',
-        'LB', 'RB', 'Axis-Left', 'DPad-Right',
-        'Back', 'Start', 'Power', 'Axis-Right','DPad-Up', 'DPad-Down' ,  'DPad-Left','DPad-Right'
-		],*/
-                const keyMap = new Map([
-                      [0, 69], //A-'z'],
-                      [1, 38], //B-'x'],
-                      [2, 65], //X-A
-                      [3, 66], //Y-B
-                      [4, 16], //Left Bumper-'ShiftLeft'],
-                      [5, 32], //Right Bumper-' '],		  
-                      [6, undefined], //Axis-Left-
-                      [7, 39], //DPad-Right-ArrowRight
-                      [8, 27], //Back Button-Escape
-                      [9, 13], //Start-Enter
-                      [10, undefined], //?
-                      [11, undefined], //Axis-right
-                      [12, 68], //DPadUp-D
-                      [13, 40], //DPad-Down-'ArrowDown'],
-                      [14, 37], //DPad-Left-'ArrowLeft'],
-                      //[15, 0],
-                    ]);
-                for(let i = 0; i < 15; i++){
-                let isContainedCurrent = gpButtons.includes(gamepadAPI.buttons[i]);
-                let isContainedPrevious = prevGpButtons.includes(gamepadAPI.buttons[i]);
-                    if (isContainedCurrent != isContainedPrevious){
-                        if(isContainedCurrent) {
-                            this.dispatchKeyEvent("keydown", keyMap.get(i), this); 
-
-                        } else  {
-                            this.dispatchKeyEvent("keyup", keyMap.get(i), this); 
-                        }
-                    
-                    }
-                }
-                saveButtons();
+            this.dispatchKeyEvent = function(type, key, self) {
+               //log("event: " + `${key} ${type}`);
+              const event = new KeyboardEvent(type, {
+                isTrusted: true,
+                key: key,
+                keyCode:key,
+                code: `${key}`,//`Key${key.toUpperCase()}`, // Adjust for specific keys
+                bubbles: true,
+                cancelable: true,
+              });
+                self.dispatchEvent(event);
             }
-            this.gamepadCtx = this;
-            
-        };		
-        setInterval(this.pollGamepad.bind(this), 16);
+
+            var updateGamepad = function () {
+               gpButtons = gamepadAPI.update();
+            }
+            function saveButtons() {
+                prevGpButtons = gpButtons;
+            }
+            function gamepadEnabled() {
+                return gamepadAPI.controller || false;
+            }
+
+            this.pollGamepad = function() 
+            {
+                updateGamepad();
+                
+                if(gamepadEnabled()){
+                    const keyMap = new Map([
+                          [0, 69], //A-'z'],
+                          [1, 38], //B-'x'],
+                          [2, 65], //X-A
+                          [3, 66], //Y-B
+                          [4, 16], //Left Bumper-'ShiftLeft'],
+                          [5, 32], //Right Bumper-' '],		  
+                          [6, undefined], //Axis-Left-
+                          [7, 39], //DPad-Right-ArrowRight
+                          [8, 27], //Back Button-Escape
+                          [9, 13], //Start-Enter
+                          [10, undefined], //?
+                          [11, undefined], //Axis-right
+                          [12, 68], //DPadUp-D
+                          [13, 40], //DPad-Down-'ArrowDown'],
+                          [14, 37], //DPad-Left-'ArrowLeft'],
+                          //[15, 0],
+                        ]);
+                    for(let i = 0; i < 15; i++){
+                    let isContainedCurrent = gpButtons.includes(gamepadAPI.buttons[i]);
+                    let isContainedPrevious = prevGpButtons.includes(gamepadAPI.buttons[i]);
+                        if (isContainedCurrent != isContainedPrevious){
+                            if(isContainedCurrent) {
+                                this.dispatchKeyEvent("keydown", keyMap.get(i), this); 
+
+                            } else  {
+                                this.dispatchKeyEvent("keyup", keyMap.get(i), this); 
+                            }
+                        
+                        }
+                    }
+                    saveButtons();
+                    requestAnimationFrame(this.pollGamepad.bind(this));
+                }
+                this.gamepadCtx = this;
+               
+            };		
+            requestAnimationFrame(this.pollGamepad.bind(this));
         };
         var unsetListeners = function() {
             var b = null;
@@ -1146,7 +1137,6 @@ export class Game {
         };
         addEvent(this.boardCover, "focus", setListeners);
         addEvent(this.boardCover, "blur", unsetListeners);
-      
     }
 
     playRecord() {
@@ -1248,10 +1238,13 @@ export class Game {
                     this.ihsSwapping = false;
                 }
             */      
-            var movesMade = 0
-            if(gamepadAPI.isButtonPressed('B'))
+            var movesMade = 0;
+            var cwKey  = Object.keys(b.settings.keyCodes).find(key => b.settings.keyCodes[key] === "cw");
+            var ccwKey = Object.keys(b.settings.keyCodes).find(key => b.settings.keyCodes[key] === "ccw");
+            
+            if(isKeyboardKeyDown[cwKey])//gamepadAPI.isButtonPressed('B'))
                 rotate = 1;
-            else if(gamepadAPI.isButtonPressed('A'))
+            else if(isKeyboardKeyDown[ccwKey])//gamepadAPI.isButtonPressed('A'))
                 rotate = -1;
             if(rotate!=0) {
                 this.piece.addKeyPressed((rotate == 1)?"cw":"ccw");
@@ -1629,7 +1622,6 @@ export class Game {
             }
         }
         
-
         this.piece.linesCleared = removedRows.length;
         
         if(this.piece.linesCleared >= 1 && this.piece.linesCleared <=4) {
@@ -1637,17 +1629,6 @@ export class Game {
         }
         else this.delayEntry = false;
 
-
-        // TODO add this to constructor of piece object
-        if (removedRows.length != 0) {
-            this.stats.executeStatsListeners("linesCleared");
-            this.piece.setLinesCleared(removedRows.length);
-        }
-        if (this.piece.spin)
-            this.stats.executeStatsListeners("spin");
-
-       
-        
         // Line Clear Delay
         this.piece.clearShadow();
         this.are = true;
@@ -1657,6 +1638,14 @@ export class Game {
         this.copyBoard(duplicate);
         this.are = false;
         
+
+        // TODO add this to constructor of piece object
+        if (removedRows.length != 0) {
+            this.stats.executeStatsListeners("linesCleared");
+            this.piece.setLinesCleared(removedRows.length);
+        }
+        if (this.piece.spin)
+            this.stats.executeStatsListeners("spin");
 
                 
         // compress

@@ -426,8 +426,7 @@ export class PageStat {
         for (var i = 0; i < this.elementsInvalidated.length; i++) {
             if (this.elementsInvalidated[i].matches("div")) { // TODO 
                 if(this.valueSet != -1)
-                   // document.getElementById(this.elementsInvalidated[i].id).textContent = "" + this.valueSet + (append == null ? "" : append);
-                    this.elementsInvalidated[i].innerHTML = "" + this.valueSet + (append == null ? "" : append);
+                    this.elementsInvalidated[i].textContent = "" + this.valueSet + (append == null ? "" : append);
             } else {
                 this.elementsInvalidated.splice(i, 1);
                 i--;
@@ -571,8 +570,7 @@ export class Clock {
         //this.timer = setTimeout(this.loop,this.interval, this.board, this);
         //(()=>this.loop(this.board, this));
         this.timer = requestAnimationFrame(()=>this.loop(this.board, this));
-        
-        
+    
     }
 
     loop(b, c) {
