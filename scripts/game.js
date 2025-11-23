@@ -1821,7 +1821,7 @@ export class Game {
             das: 167, //
             arr: 32, //Math.floor(1000/60),
             irs: true,
-            ihs: true,
+            ihs: false,
             gravityDelay: 1000,
             maxMoves: 20,
             softDropSpeed: 38,
