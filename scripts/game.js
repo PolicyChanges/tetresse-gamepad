@@ -1,6 +1,8 @@
 import { setCookie, getCookie, error, log, addEvent, addChild, deepClone, sleep, wait, fastEmptyArray } from './utils.js';
 import { games, gamepadAPI, Piece, PageStat, GravityTimer, Clock, Stats } from './main.js';
 
+
+// Need key state for IRS/IHS on piece spawn
 var isKeyboardKeyDown = [];
 
 function keyDown(e) {
@@ -127,8 +129,8 @@ export class Game {
             }
             // s.executeStatsListeners(p.piece + "spin");
         });
-        this.stats.addStatsListener("piecePlaced", function(s) {
-            while(this.are) utils.wait(1);//if(this.are == true) return;
+        this.stats.addStatsListener("piecePlaced", async function(s) {
+            //while(this.are) sleep(1);//utils.wait(1);
             s.piecesPlaced.add(1);
 
             // update pp TODO update pp for regular lines cleared and make easier (repeated code in tick)
@@ -152,10 +154,10 @@ export class Game {
             
             var weightedCount = 0.0;
             
-            var keysPressedStr = "keys pressed: ";
+            var keysPressedStr = "";
             for (var i = p.keysPressed.length - 1; i >= 0; i--) {
                 var j = p.keysPressed[i].key;
-                keysPressedStr.concat(p.keysPressed[p.keysPressed.length-i-1].key);
+                keysPressedStr=(p.keysPressed[i].key)+" "+keysPressedStr;
                 if ("hold".indexOf(j) != -1)
                     break;
                 if ("sd".indexOf(j) != -1) {
@@ -167,7 +169,7 @@ export class Game {
                 if (!!p.keysPressed[i].repeated)
                     weightedCount += 0.5;
             }
-
+            log("pressed: " + keysPressedStr);
             if (!p.spin) {
                 var v = s.board.getIdealFinesse(p.piece, p.getLocation()[1], p.getRotation(), p.spin);
                 var optimalWeight = 0.0;
@@ -187,7 +189,7 @@ export class Game {
                 if (weightedCount - optimalWeight > 0) {
                     s.finesse.add(weightedCount - optimalWeight);
                     s.finessePrintout.updateValue(str); // TODO add finesse error (tell user what they did that was wrong)
-                    log(keysPressedStr + " ideal: " + str);
+                    log("ideal: " + str);
                     if (s.board.settings.redoFinesseErrors) {
                         p.reset();
                         //var audioWrong = new Audio('./snd/sound_wrong.ogg');
@@ -305,11 +307,11 @@ export class Game {
         cancelable: false,
       });
         if(Game.activeElement != undefined)
-        addButton(event, Game.activeElement, Game.parentElement);//self.dispatchEvent(event);
+            addButton(event, Game.activeElement, Game.parentElement);//self.dispatchEvent(event);
     }
 
 
-    this.keyMap = new Map([
+    var keyMap = new Map([
               [0, 69], //A-'z'],
               [1, 38], //B-'x'],
               [2, 65], //X-A
@@ -339,10 +341,10 @@ export class Game {
             let isContainedPrevious = this.gpKeyPrevbindButtons.includes(gamepadAPI.buttons[i]);
                 if (isContainedCurrent != isContainedPrevious){
                     if(isContainedCurrent) {
-                        dispatchKeybind("keydown", this.keyMap.get(i), this); 
+                        dispatchKeybind("keydown", keyMap.get(i), this); 
 
                     } else  {
-                        dispatchKeybind("keyup", this.keyMap.get(i), this); 
+                        dispatchKeybind("keyup", keyMap.get(i), this); 
                     }
                 
                 }
@@ -429,7 +431,7 @@ export class Game {
             v = addChild(gamePlay, gamePlay.id + "-heading", "div");
             v.classList.add(this.name + "-menu-break");
             v.innerHTML = "Game Play";
-            arr = ["ARR", "DAS"];
+            arr = ["ARR", "DAS", "IRS", "IHS"];
             for (var i = 0; i < arr.length; i++) {
                 var g, e, e1;
                 if (i % 2 == 0) {
@@ -885,7 +887,6 @@ export class Game {
         let gpButtons = [];
         let prevGpButtons = [];
         let delayEntry = false;
-        this.ihsSwapping = false;
         
         this.are = false;
         
@@ -915,8 +916,6 @@ export class Game {
 
             var keypress = function (e) {
                 e = e || window.event;
-                if(this.are) return;
-                //while(this.are) wait(1);
                 
                 var b = null;
                 for (var i = 0; i < games.length; i++)
@@ -1030,7 +1029,7 @@ export class Game {
 
             var keyrelease = function(e) {
                 e = e || window.event;
-        
+                //if(this.are) return;
                 if (b.settings.keyCodes[e.keyCode] == "right") {
                     b.boolKeys.right.down = false;
                     clearTimeout(b.pieceMoveTimeout["right"]);
@@ -1060,6 +1059,7 @@ export class Game {
                 bubbles: true,
                 cancelable: true,
               });
+            
                 self.dispatchEvent(event);
             }
 
@@ -1073,36 +1073,36 @@ export class Game {
                 return gamepadAPI.controller || false;
             }
 
+            const keyMap = new Map([
+              [0, 69], //A-'z'],
+              [1, 38], //B-'x'],
+              [2, 65], //X-A
+              [3, 66], //Y-B
+              [4, 16], //Left Bumper-'ShiftLeft'],
+              [5, 32], //Right Bumper-' '],		  
+              [6, undefined], //Axis-Left-
+              [7, 39], //DPad-Right-ArrowRight
+              [8, 27], //Back Button-Escape
+              [9, 13], //Start-Enter
+              [10, undefined], //?
+              [11, undefined], //Axis-right
+              [12, 68], //DPadUp-D
+              [13, 40], //DPad-Down-'ArrowDown'],
+              [14, 37], //DPad-Left-'ArrowLeft'],
+              //[15, 0],
+            ]);
+                        
             this.pollGamepad = function() 
             {
-                updateGamepad();
-                
                 if(gamepadEnabled()){
-                    const keyMap = new Map([
-                          [0, 69], //A-'z'],
-                          [1, 38], //B-'x'],
-                          [2, 65], //X-A
-                          [3, 66], //Y-B
-                          [4, 16], //Left Bumper-'ShiftLeft'],
-                          [5, 32], //Right Bumper-' '],		  
-                          [6, undefined], //Axis-Left-
-                          [7, 39], //DPad-Right-ArrowRight
-                          [8, 27], //Back Button-Escape
-                          [9, 13], //Start-Enter
-                          [10, undefined], //?
-                          [11, undefined], //Axis-right
-                          [12, 68], //DPadUp-D
-                          [13, 40], //DPad-Down-'ArrowDown'],
-                          [14, 37], //DPad-Left-'ArrowLeft'],
-                          //[15, 0],
-                        ]);
+                    updateGamepad();
+
                     for(let i = 0; i < 15; i++){
                     let isContainedCurrent = gpButtons.includes(gamepadAPI.buttons[i]);
                     let isContainedPrevious = prevGpButtons.includes(gamepadAPI.buttons[i]);
                         if (isContainedCurrent != isContainedPrevious){
                             if(isContainedCurrent) {
                                 this.dispatchKeyEvent("keydown", keyMap.get(i), this); 
-
                             } else  {
                                 this.dispatchKeyEvent("keyup", keyMap.get(i), this); 
                             }
@@ -1112,9 +1112,8 @@ export class Game {
                     saveButtons();
                     requestAnimationFrame(this.pollGamepad.bind(this));
                 }
-                this.gamepadCtx = this;
-               
-            };		
+            };
+            //setInterval(this.pollGamepad.bind(this), 8);		
             requestAnimationFrame(this.pollGamepad.bind(this));
         };
         var unsetListeners = function() {
@@ -1193,7 +1192,7 @@ export class Game {
     
 
     async playPiece() {
-        while(this.are) await sleep(4);
+       while(this.are) await sleep(1);
         if (this.paused || this.gameOver)
             return;
         if (this.piece == null) {
@@ -1211,16 +1210,20 @@ export class Game {
             // every new piece's turn starts here
             this.stats.executeStatsListeners("pieceSpawn");
 
-            this.piece = this.nextPieces.splice(0, 1)[0];
+        this.piece = this.nextPieces.splice(0, 1)[0];
             this.updateQueue();
         }
+
 
        let  b = games[0];
 
             // IHS TODO: fix
+            
+            //if(!this.ihsSwapping)
             /*
-            if(!this.ihsSwapping)
-                if(gamepadAPI.isButtonPressed("LB")) {
+            if(b.settings.ihs){
+                var cwKey  = Object.keys(b.settings.keyCodes).find(key => b.settings.keyCodes[key] === "hold");
+                if(isKeyboardKeyDown[ccwKey]) {
                     this.ihsSwapping = true;
                     if(b.swapped = true) return;
                     b.piece.addKeyPressed("hold");
@@ -1237,21 +1240,28 @@ export class Game {
                     b.swapped = true;
                     this.ihsSwapping = false;
                 }
-            */      
-            var movesMade = 0;
-            var cwKey  = Object.keys(b.settings.keyCodes).find(key => b.settings.keyCodes[key] === "cw");
-            var ccwKey = Object.keys(b.settings.keyCodes).find(key => b.settings.keyCodes[key] === "ccw");
+            }
+              //  }
+                  */
             
-            if(isKeyboardKeyDown[cwKey])//gamepadAPI.isButtonPressed('B'))
-                rotate = 1;
-            else if(isKeyboardKeyDown[ccwKey])//gamepadAPI.isButtonPressed('A'))
-                rotate = -1;
-            if(rotate!=0) {
-                this.piece.addKeyPressed((rotate == 1)?"cw":"ccw");
-                var rotFunc = (rotate == 1)?function(){b.piece.rotate(1)}:function(){b.piece.rotate(-1)};
-                b.addMove(rotFunc);
-                movesMade = 1;
-            }                                      
+            var movesMade = 0;
+
+            
+            if(b.settings.irs) {
+                var cwKey  = Object.keys(b.settings.keyCodes).find(key => b.settings.keyCodes[key] === "cw");
+                var ccwKey = Object.keys(b.settings.keyCodes).find(key => b.settings.keyCodes[key] === "ccw");
+                
+                if(isKeyboardKeyDown[cwKey])
+                    rotate = 1;
+                else if(isKeyboardKeyDown[ccwKey])
+                    rotate = -1;
+                if(rotate!=0) {
+                    this.piece.addKeyPressed((rotate == 1)?"cw":"ccw");
+                    var rotFunc = (rotate == 1)?function(){b.piece.rotate(1)}:function(){b.piece.rotate(-1)};
+                    b.addMove(rotFunc);
+                    movesMade = 1;
+                }      
+            }                                
         if (!this.gameOver) {
             this.piece.display();                
             this.gravTimer = new GravityTimer(this);
@@ -1477,6 +1487,7 @@ export class Game {
     }
 
     updateNextPieces() {
+        
         for (var j = 0; j < this.settings.nextPiecesNum; j++) {
             for (var i = 0; i < 4; i++) {
                 var p = this.realNextPiecesLocations[j][i];
@@ -1573,6 +1584,7 @@ export class Game {
         return new Piece(this.bag.pop(), this);
     }
 
+    
     copyBoard(tempBoard) {
         // copy board to screen
         for (var row = 20; row < 40; row++) {
@@ -1586,6 +1598,19 @@ export class Game {
                     ele.classList.add(value);
             }
         }
+    }
+
+    animateBoard(tempBoard) {
+        //var animatedElements = new Array(); 
+        // copy board to screen
+        var animation = "removeRow";
+        for (var row = 20; row < 40; row++) {
+            for (var col = 0; col < 10; col++) {
+                var ele = this.board.tiles[row][col].element;
+                if(tempBoard[row][col] == animation)
+                    ele.classList.add(animation);
+                }
+            }
     }
     // sets the displayed screen to match the virtual board
     async updateScreen() {
@@ -1621,7 +1646,7 @@ export class Game {
                 removedRows.push(row);
             }
         }
-        
+                
         this.piece.linesCleared = removedRows.length;
         
         if(this.piece.linesCleared >= 1 && this.piece.linesCleared <=4) {
@@ -1629,25 +1654,28 @@ export class Game {
         }
         else this.delayEntry = false;
 
-        // Line Clear Delay
-        this.piece.clearShadow();
-        this.are = true;
-         this.copyBoard(tempBoard);
-        if(this.delayEntry)  await sleep(484);
-        //restore board
-        this.copyBoard(duplicate);
-        this.are = false;
-        
-
         // TODO add this to constructor of piece object
         if (removedRows.length != 0) {
             this.stats.executeStatsListeners("linesCleared");
             this.piece.setLinesCleared(removedRows.length);
+            
+            
+            this.piece.clearShadow();
+            // Line Clear Delay
+            if(this.delayEntry) {
+                this.are = true;
+                this.animateBoard(tempBoard);  
+                await sleep(500);
+                
+                //restore board
+                //this.copyBoard(duplicate);
+            }
         }
+            
         if (this.piece.spin)
             this.stats.executeStatsListeners("spin");
-
-                
+            
+        
         // compress
         var swap = function(board, row1, row2) {
             var arr1 = board[row1];
@@ -1664,9 +1692,9 @@ export class Game {
             }
             offset++;
         }
-
+    
         this.copyBoard(tempBoard);
-
+        this.are = false;
     }
 
     download() {
@@ -1775,6 +1803,8 @@ export class Game {
         var settings = {
             das: 167, //
             arr: 32, //Math.floor(1000/60),
+            irs: true,
+            ihs: false,
             gravityDelay: 1000,
             maxMoves: 20,
             softDropSpeed: 38,
@@ -1815,6 +1845,8 @@ export class Game {
             labels: [
                 "das",
                 "arr",
+                "irs",
+                "ihs",
                 "gravityDelay",
                 "maxMoves",
                 "softDropSpeed",

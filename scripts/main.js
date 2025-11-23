@@ -241,7 +241,7 @@ export class Stats {
         this.psArr = [];
 
         this.board = board;
-        // TODO add clock interval to game settings
+
         this.clock = new Clock(this.board, 100, function(b) {
             b.stats.executeStatsListeners("tick");
         });
@@ -417,22 +417,6 @@ export class PageStat {
             if (args.length > 4) append = args[4];
             if (args.length > 5) linked = args[5];
         }
-
-            
-        this.elementsInvalidated = [];
-        this.valueSet = -1;
-        setInterval(()=> {
-        if(this.elementsInvalidated == undefined || this.elementsInvalidated.length == 0) return;
-        for (var i = 0; i < this.elementsInvalidated.length; i++) {
-            if (this.elementsInvalidated[i].matches("div")) { // TODO 
-                if(this.valueSet != -1)
-                    this.elementsInvalidated[i].textContent = "" + this.valueSet + (append == null ? "" : append);
-            } else {
-                this.elementsInvalidated.splice(i, 1);
-                i--;
-            }
-            fastEmptyArray(this.elementsInvalidated);
-        }}, 200);
         this.setup(name, stats, startValue, type, append, linked);
     }
 
@@ -443,6 +427,8 @@ export class PageStat {
         this.type = type;
         this.append = (append == null ? "" : append);
         this.linked = linked;
+        this.updateElementsInterval = 200;
+        this.lastUpdateElementTimestamp = new Date().getTime();
         this.updateElements();
     
         stats.psArr.push(this);
@@ -505,13 +491,20 @@ export class PageStat {
             }
         }
         
-        if (this.elements != null) {
-            for (var i = 0; i < this.elements.length; i++) {
-                //while(this.elementsInvalidated == undefined)sleep(10); 
-                this.elementsInvalidated.push(this.elements[i]);
-                this.valueSet = v;
+        if(new Date().getTime() - this.lastUpdateElementTimestamp >= this.updateElementsInterval) {
+            if (this.elements != null) {
+                for (var i = 0; i < this.elements.length; i++) {
+                    if (this.elements[i].matches("div")) { // TODO 
+                            this.elements[i].textContent = "" + v + (this.append == null ? "" : this.append);
+                    } else {
+                        this.elements.splice(i, 1);
+                        i--;
+                    }
+                }
             }
+            this.lastUpdateElementTimestamp = new Date().getTime();
         }
+        
     }
 
         
@@ -545,7 +538,10 @@ export class Clock {
 
         this.completed = false;
         this.creationTime = new Date().getTime();
-
+        
+        this.clockUpdateInterval = 100;
+        this.lastClockUpdateTimestamp = new Date().getTime();
+        
         this.storedTime = -1;
         this.pausedTime = -1;
         
@@ -566,18 +562,17 @@ export class Clock {
         if (this.startTime != null)
             this.pausedTime += new Date().getTime() - this.startTime;
         this.startTime = new Date().getTime();
-        
-        //this.timer = setTimeout(this.loop,this.interval, this.board, this);
-        //(()=>this.loop(this.board, this));
+
         this.timer = requestAnimationFrame(()=>this.loop(this.board, this));
-    
     }
 
     loop(b, c) {
         c.func(b);
         
-        //c.timer = setTimeout(c.loop,c.interval, c.board, c);
-        c.timer = requestAnimationFrame(()=>c.loop(b,c));
+        //if(new Date().getTime() - c.lastClockUpdateTimestamp >= c.clockUpdateInterval) {
+            c.timer = requestAnimationFrame(()=>c.loop(b,c));
+        //    c.lastClockUpdateTimestamp = new Date().getTime()
+        //}
     }
 
     complete() {
@@ -634,7 +629,7 @@ export class GravityTimer {
         this.remaining -= new Date().getTime() - this.start;
     }
 
-    resume() {
+    async resume() {
         this.start = new Date().getTime();
         
         var f = function(board) {
@@ -646,6 +641,7 @@ export class GravityTimer {
                 return;
             
             //if(!board.piece.landed)
+            while(this.board.are) sleep(1);
                 board.piece.drop();
             
             if (board.gravTimer != null)
@@ -768,6 +764,8 @@ export class Piece {
     }
 
     place() {
+       // if(games[0].are) return;
+        //while(games[0].are) await sleep(1);
         var testUpLoc = this.getLocation();
         testUpLoc[0]--;
         if (!(this.canMove(1) || this.canMove(-1) || this.isValidPosition(testUpLoc, this.pieceLayout))) {
@@ -833,13 +831,15 @@ export class Piece {
     }
 
     // display piece on board
-    display() {
+    async display() {
+        while(this.are) sleep(1);
         if (!this.displayed) {
             this.displayed = true;
             this.loc = this.getDefaultLoc();
         }
 
         if (!this.isValidPosition(this.loc, this.pieceLayout)) {
+            while(this.are) sleep(1);
             error("Piece [" + this.piece + "] collision error. location: \n" + this.loc + "\npieceLayout:\n" + this.pieceLayout);
             return;
         }
@@ -938,7 +938,8 @@ export class Piece {
     }
 
     // move the piece down one level: if it's at the bottom and can't go down this piece will become "dropped"
-    drop() {
+    async drop() {
+        while(this.are) sleep(1);
         if(this.isDropped == true) {
             this.place();
             Audio.playHd();

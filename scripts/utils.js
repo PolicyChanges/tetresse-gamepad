@@ -26,14 +26,23 @@ export function getCookie(name) {
     return "";
 }
 
+var devtools = function() {};
+devtools.toString = function() {
+  //if (!this.opened) {
+  //  alert("Opened");
+  //}
+  this.opened = true;
+}
+
 // TODO add these as static functions to game class
 export function error(message) {
-    throw new Error("[game.js]: " + message);
     //debugger;
+    throw new Error("[game.js]: " + message);
+
 }
 
 export function log(message) {
-    var supressLog = false;
+    var supressLog = devtools.toString();
     if(!supressLog)
         console.log("Log: " + message);
 }
