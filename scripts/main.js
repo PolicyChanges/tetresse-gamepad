@@ -641,7 +641,7 @@ export class GravityTimer {
                 return;
             
             //if(!board.piece.landed)
-            while(this.board.are) sleep(1);
+            //while(this.board.are) sleep(1);
                 board.piece.drop();
             
             if (board.gravTimer != null)
@@ -832,14 +832,14 @@ export class Piece {
 
     // display piece on board
     async display() {
-        while(this.are) sleep(1);
+        //while(this.are) sleep(1);
         if (!this.displayed) {
             this.displayed = true;
             this.loc = this.getDefaultLoc();
         }
 
         if (!this.isValidPosition(this.loc, this.pieceLayout)) {
-            while(this.are) sleep(1);
+           // while(this.are) sleep(1);
             error("Piece [" + this.piece + "] collision error. location: \n" + this.loc + "\npieceLayout:\n" + this.pieceLayout);
             return;
         }
@@ -939,7 +939,7 @@ export class Piece {
 
     // move the piece down one level: if it's at the bottom and can't go down this piece will become "dropped"
     async drop() {
-        while(this.are) sleep(1);
+        //while(this.are) sleep(1);
         if(this.isDropped == true) {
             this.place();
             Audio.playHd();

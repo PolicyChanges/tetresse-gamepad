@@ -1220,11 +1220,11 @@ export class Game {
             // IHS TODO: fix
             
             //if(!this.ihsSwapping)
-            /*
+            
             if(b.settings.ihs){
-                var cwKey  = Object.keys(b.settings.keyCodes).find(key => b.settings.keyCodes[key] === "hold");
-                if(isKeyboardKeyDown[ccwKey]) {
-                    this.ihsSwapping = true;
+                var holdKey  = Object.keys(b.settings.keyCodes).find(key => b.settings.keyCodes[key] === "hold");
+                if(isKeyboardKeyDown[holdKey]) {
+                    //this.ihsSwapping = true;
                     if(b.swapped = true) return;
                     b.piece.addKeyPressed("hold");
                     if (b.heldPiece == null)
@@ -1234,19 +1234,18 @@ export class Game {
                     b.piece.hold();
                     b.heldPiece = b.piece;
                     b.piece = temp;
-                    //b.playPiece();
+                    b.playPiece();
                     b.piece.addMove(0);
                     b.updateHeld();
                     b.swapped = true;
-                    this.ihsSwapping = false;
+                   // this.ihsSwapping = false;
                 }
             }
               //  }
-                  */
+                  
             
             var movesMade = 0;
 
-            
             if(b.settings.irs) {
                 var cwKey  = Object.keys(b.settings.keyCodes).find(key => b.settings.keyCodes[key] === "cw");
                 var ccwKey = Object.keys(b.settings.keyCodes).find(key => b.settings.keyCodes[key] === "ccw");
@@ -1600,6 +1599,12 @@ export class Game {
         }
     }
 
+    disableKeyboardInput() {
+      document.onkeydown = () => false;
+    }
+    enableKeyboardInput() {
+      document.onkeydown = null; 
+    }
     animateBoard(tempBoard) {
         //var animatedElements = new Array(); 
         // copy board to screen
@@ -1607,10 +1612,18 @@ export class Game {
         for (var row = 20; row < 40; row++) {
             for (var col = 0; col < 10; col++) {
                 var ele = this.board.tiles[row][col].element;
-                if(tempBoard[row][col] == animation)
+                if(tempBoard[row][col] == animation){
+                    ele.addEventListener('animationstart', this.disableKeyboardInput);
+                    ele.addEventListener('animationend', this.enableKeyboardInput);
                     ele.classList.add(animation);
+                    //ele.animate(animation);
                 }
             }
+    }
+}
+    blockEvent(event) {
+        event.preventDefault(); 
+        event.stopPropagation();
     }
     // sets the displayed screen to match the virtual board
     async updateScreen() {
@@ -1658,25 +1671,30 @@ export class Game {
         if (removedRows.length != 0) {
             this.stats.executeStatsListeners("linesCleared");
             this.piece.setLinesCleared(removedRows.length);
-            
-            
-            this.piece.clearShadow();
-            // Line Clear Delay
-            if(this.delayEntry) {
-                this.are = true;
-                this.animateBoard(tempBoard);  
-                await sleep(500);
-                
-                //restore board
-                //this.copyBoard(duplicate);
-            }
         }
             
         if (this.piece.spin)
             this.stats.executeStatsListeners("spin");
             
-        
-        // compress
+
+        this.piece.clearShadow();
+            // Line Clear Delay
+        if(this.delayEntry) {
+            this.are = true;
+            this.gravTimer.pause();
+            var b = games[0];
+            
+            b.boolKeys.right.down = false;
+            clearTimeout(b.pieceMoveTimeout["right"]);
+            b.boolKeys.left.down = false;
+            clearTimeout(b.pieceMoveTimeout["left"]);
+            b.boolKeys.sd.down = false;
+                    
+            this.animateBoard(tempBoard);  
+ 
+            await sleep(484);
+        }
+       // compress
         var swap = function(board, row1, row2) {
             var arr1 = board[row1];
             board[row1] = board[row2];
@@ -1694,7 +1712,9 @@ export class Game {
         }
     
         this.copyBoard(tempBoard);
+         
         this.are = false;
+        this.gravTimer = null;
     }
 
     download() {
@@ -1775,14 +1795,11 @@ export class Game {
             target.style.background = "none";
             var ele = target.cloneNode(true);
             parent.replaceChild(ele, target);
-            //addEvent(ele, "click", Game.addKeybindTarget);
+
             addEvent(ele, "click", Game.addKeybind);
             addEvent(ele, "click", games[0].setActiveElement);
             
             games[0].clearActiveElement();
-            //Game.activeElement = undefined;
-            //Game.parentElement = undefined;
-        //});
     }
     
     // Fisher-Yates shuffle
@@ -1804,7 +1821,7 @@ export class Game {
             das: 167, //
             arr: 32, //Math.floor(1000/60),
             irs: true,
-            ihs: false,
+            ihs: true,
             gravityDelay: 1000,
             maxMoves: 20,
             softDropSpeed: 38,
