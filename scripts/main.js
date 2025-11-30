@@ -560,8 +560,9 @@ export class Clock {
             this.pausedTime += new Date().getTime() - this.startTime;
         this.startTime = new Date().getTime();
 
-        // use setTimeout over requestAnimationFrame for low priority elements
-        this.timer = setTimeout(this.loop, this.interval, this.board, this);//requestAnimationFrame(()=>this.loop(this.board, this));
+        // tick must update as fast as pieces are placed requestAnimationFrame guarentees this ~~use setTimeout over requestAnimationFrame for low priority elements~~
+        //this.timer = setTimeout(this.loop, 16, this.board, this);
+        this.timer = requestAnimationFrame(()=>this.loop(this.board, this));
     }
 
     loop(b, c) {
@@ -569,8 +570,8 @@ export class Clock {
             c.func(b);
         //    c.lastClockUpdateTimestamp = new Date().getTime()
         // }
-        //c.timer = requestAnimationFrame(()=>c.loop(b,c));
-        c.timer = setTimeout(c.loop, c.interval, c.board, c);
+        c.timer = requestAnimationFrame(()=>c.loop(b,c));
+        //c.timer = setTimeout(c.loop, c.interval, c.board, c);
     }
 
     complete() {
@@ -581,8 +582,8 @@ export class Clock {
             this.resume();
         else
             this.pause();
-        //cancelAnimationFrame(this.timer);
-        clearTimeout(this.timer);
+        cancelAnimationFrame(this.timer);
+        //clearTimeout(this.timer);
         this.timer = undefined;
     }
 
