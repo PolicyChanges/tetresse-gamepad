@@ -539,9 +539,6 @@ export class Clock {
         this.completed = false;
         this.creationTime = new Date().getTime();
         
-        this.clockUpdateInterval = 100;
-        this.lastClockUpdateTimestamp = new Date().getTime();
-        
         this.storedTime = -1;
         this.pausedTime = -1;
         
@@ -563,16 +560,17 @@ export class Clock {
             this.pausedTime += new Date().getTime() - this.startTime;
         this.startTime = new Date().getTime();
 
-        this.timer = requestAnimationFrame(()=>this.loop(this.board, this));
+        // use setTimeout over requestAnimationFrame for low priority elements
+        this.timer = setTimeout(this.loop, this.interval, this.board, this);//requestAnimationFrame(()=>this.loop(this.board, this));
     }
 
     loop(b, c) {
-        c.func(b);
-        
-        //if(new Date().getTime() - c.lastClockUpdateTimestamp >= c.clockUpdateInterval) {
-            c.timer = requestAnimationFrame(()=>c.loop(b,c));
+        //if(new Date().getTime() - c.lastClockUpdateTimestamp >= c.interval) {
+            c.func(b);
         //    c.lastClockUpdateTimestamp = new Date().getTime()
-        //}
+        // }
+        //c.timer = requestAnimationFrame(()=>c.loop(b,c));
+        c.timer = setTimeout(c.loop, c.interval, c.board, c);
     }
 
     complete() {
@@ -583,7 +581,8 @@ export class Clock {
             this.resume();
         else
             this.pause();
-        cancelAnimationFrame(this.timer);
+        //cancelAnimationFrame(this.timer);
+        clearTimeout(this.timer);
         this.timer = undefined;
     }
 
@@ -640,8 +639,6 @@ export class GravityTimer {
             if (board.gravNum != 0)
                 return;
             
-            //if(!board.piece.landed)
-            //while(this.board.are) sleep(1);
                 board.piece.drop();
             
             if (board.gravTimer != null)

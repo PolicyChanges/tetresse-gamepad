@@ -431,7 +431,7 @@ export class Game {
             v = addChild(gamePlay, gamePlay.id + "-heading", "div");
             v.classList.add(this.name + "-menu-break");
             v.innerHTML = "Game Play";
-            arr = ["ARR", "DAS", "IRS", "IHS"];
+            arr = ["ARR", "DAS"];
             for (var i = 0; i < arr.length; i++) {
                 var g, e, e1;
                 if (i % 2 == 0) {
@@ -491,6 +491,50 @@ export class Game {
                 v.classList.add(this.name + "-ar");
                 v.innerHTML = this.settings[arr[i].toLowerCase()];
             }
+            
+            // IRS and IHS
+            var finesse = addChild(settings, settings.id + "-irsihs", "div");
+            finesse.classList.add(this.name + "-menu-group");
+            v = addChild(finesse, finesse.id + "-heading", "div");
+            v.classList.add(this.name + "-menu-break");
+            v.innerHTML = "IRS/IHS";
+            arr = [["irs", "IRS"],["ihs", "IHS"]];
+            
+            for (var i = 0; i < arr.length; i++) {
+                var g, e;
+                if (i % 2 == 0) {
+                    g = addChild(finesse, finesse.id + "-container-" + i, "div");
+                    g.classList.add(this.name + "-menu-keybind-group");
+                }
+                e = addChild(g, g.id + "-element-" + arr[i][1].toLowerCase(), "div");
+                e.classList.add(this.name + "-menu-keybinds-element");
+                e.classList.add(this.name + (i % 2 == 0 ? "-al" : "-ar"));
+                v = addChild(e, e.id + "-question", "div");
+                v.classList.add(this.name + "-question");
+                v.classList.add(this.name + "-al");
+                v.classList.add(this.name + "-menu-keybinds-button");
+                v.title = "Toggle IRS and IHS"; 
+                v = addChild(e, e.id + "-text", "div");
+                v.classList.add(this.name + "-al");
+                v.innerHTML = arr[i][1];
+                v = addChild(e, e.id + "-checkbox", "input");
+                v.type = "checkbox";
+                v.classList.add(this.name + "-ar", this.name + "-menu-keybinds-checkbox");
+                v.checked = this.settings[arr[i][0]];
+                addEvent(v, "change", function(e) {
+                    var board = games[Game.getGameNumber(e.target.id)];
+                    if (e.target.id.indexOf("-irs-") != -1) {
+                        board.settings.irs = e.target.checked;
+                        setCookie("settings", JSON.stringify(board.settings), 1000);
+                    } else {
+                        //alert("disable until fixed");
+                        //e.target.checked = false; // TODO: remove
+                        board.settings.ihs = e.target.checked;
+                        setCookie("settings", JSON.stringify(board.settings), 1000); // TODO remove these inline cookie updates
+                    }
+                });
+            }
+            
             // finesse
             var finesse = addChild(settings, settings.id + "-finesse", "div");
             finesse.classList.add(this.name + "-menu-group");
@@ -887,7 +931,7 @@ export class Game {
         let gpButtons = [];
         let prevGpButtons = [];
         let delayEntry = false;
-        
+        window.repeatKeysTimeoutList = [];
         this.are = false;
         
         
@@ -1029,7 +1073,6 @@ export class Game {
 
             var keyrelease = function(e) {
                 e = e || window.event;
-                //if(this.are) return;
                 if (b.settings.keyCodes[e.keyCode] == "right") {
                     b.boolKeys.right.down = false;
                     clearTimeout(b.pieceMoveTimeout["right"]);
@@ -1039,7 +1082,6 @@ export class Game {
                 } else if (b.settings.keyCodes[e.keyCode] == "sd") {
                     b.boolKeys.sd.down = false;
                 }
-
             };
 
             b.listeners.push(keyrelease);
@@ -1192,8 +1234,8 @@ export class Game {
     
 
     async playPiece() {
-       while(this.are) await sleep(1);
-        if (this.paused || this.gameOver)
+       while(this.are) {await sleep(1);}
+        if (this.paused || this.gameOver || this.are)
             return;
         if (this.piece == null) {
             this.updateQueue();
@@ -1206,43 +1248,20 @@ export class Game {
                 this.gameOver = true;
 
         var rotate = 0;
+        let  b = games[0];
         if (!this.gameOver && (this.piece == null || this.piece.isDropped)) {
+           
             // every new piece's turn starts here
             this.stats.executeStatsListeners("pieceSpawn");
-
-        this.piece = this.nextPieces.splice(0, 1)[0];
+            log("TODO: fix lazy hack");
+            while(!window.repeatKeysTimeoutList.length === 0) { clearTimeout(window.repeatKeysTimeoutList.pop()); }
+            this.piece = this.nextPieces.splice(0, 1)[0];
             this.updateQueue();
+            
         }
 
-
-       let  b = games[0];
-
-            // IHS TODO: fix
-            
-            //if(!this.ihsSwapping)
-            
-            if(b.settings.ihs){
-                var holdKey  = Object.keys(b.settings.keyCodes).find(key => b.settings.keyCodes[key] === "hold");
-                if(isKeyboardKeyDown[holdKey]) {
-                    //this.ihsSwapping = true;
-                    if(b.swapped = true) return;
-                    b.piece.addKeyPressed("hold");
-                    if (b.heldPiece == null)
-                        b.heldPiece = b.nextPieces.splice(0,1)[0];
-                    b.updateQueue();
-                    var temp = b.heldPiece;
-                    b.piece.hold();
-                    b.heldPiece = b.piece;
-                    b.piece = temp;
-                    b.playPiece();
-                    b.piece.addMove(0);
-                    b.updateHeld();
-                    b.swapped = true;
-                   // this.ihsSwapping = false;
-                }
-            }
-              //  }
-                  
+        
+        if (!this.gameOver) {
             
             var movesMade = 0;
 
@@ -1258,10 +1277,32 @@ export class Game {
                     this.piece.addKeyPressed((rotate == 1)?"cw":"ccw");
                     var rotFunc = (rotate == 1)?function(){b.piece.rotate(1)}:function(){b.piece.rotate(-1)};
                     b.addMove(rotFunc);
-                    movesMade = 1;
+                    movesMade++;
                 }      
-            }                                
-        if (!this.gameOver) {
+            }
+            
+            if(b.settings.ihs){
+                var holdKey  = Object.keys(b.settings.keyCodes).find(key => b.settings.keyCodes[key] === "hold");
+                if(isKeyboardKeyDown[holdKey]) {
+                    //this.ihsSwapping = true;
+                    //if(b.swapped = true) return;
+                    
+                    b.piece.addKeyPressed("hold");
+                    if (b.heldPiece == null)
+                        b.heldPiece = b.nextPieces.splice(0,1)[0];
+                    b.updateQueue();
+                    var temp = b.heldPiece;
+                    b.piece.hold();
+                    b.heldPiece = b.piece;
+                    b.piece = temp;
+                    //b.playPiece();
+                    movesMade++;
+                    b.piece.addMove(0);
+                    b.updateHeld();
+                    b.swapped = true;
+                }
+            }
+              
             this.piece.display();                
             this.gravTimer = new GravityTimer(this);
             this.movesMade = movesMade;
@@ -1312,6 +1353,7 @@ export class Game {
         this.nextPieces = [];
         this.updateNextPieces();
         this.stats.reset();
+        this.repeatKeysTimeoutList = [];
     }
 
     /**
@@ -1554,7 +1596,7 @@ export class Game {
         if (!bool.down)
             return;
         action();
-        window.setTimeout(Game.repeatKeys, speed, action, bool, speed);
+        window.repeatKeysTimeoutList.push(window.setTimeout(Game.repeatKeys, speed, action, bool, speed));
     }
 
 
@@ -1573,9 +1615,7 @@ export class Game {
     resetGravityTimer() {
         this.gravTimer = new GravityTimer(this);
     }
-    isEntryDelayed() {
-        return this.delayEntry;
-    }
+
     nextPiece() {
         if (this.bag.length == 0) {
             this.bag = Game.shuffle(["i", "j", "l", "o", "s", "t", "z"]);
@@ -1599,34 +1639,21 @@ export class Game {
         }
     }
 
-    disableKeyboardInput() {
-      document.onkeydown = () => false;
-    }
-    enableKeyboardInput() {
-      document.onkeydown = null; 
-    }
     animateBoard(tempBoard) {
-        //var animatedElements = new Array(); 
         // copy board to screen
         var animation = "removeRow";
         for (var row = 20; row < 40; row++) {
             for (var col = 0; col < 10; col++) {
                 var ele = this.board.tiles[row][col].element;
                 if(tempBoard[row][col] == animation){
-                    ele.addEventListener('animationstart', this.disableKeyboardInput);
-                    ele.addEventListener('animationend', this.enableKeyboardInput);
                     ele.classList.add(animation);
-                    //ele.animate(animation);
                 }
             }
+        }
     }
-}
-    blockEvent(event) {
-        event.preventDefault(); 
-        event.stopPropagation();
-    }
+
     // sets the displayed screen to match the virtual board
-    async updateScreen() {
+   async updateScreen() {
         var start = this.board.tiles.length - this.settings.displayedBoardHeight;
         
         var duplicate = [];        
@@ -1643,7 +1670,7 @@ export class Game {
         // remove filled rows
         var removedRows = [];
         
-        // Do row clear animation
+        // Find full rows and push row clear animation
         for (var row = start; row < tempBoard.length; row++) {
             var filledUp = true;
             for (var col = 0; col < tempBoard[0].length; col++) {
@@ -1683,18 +1710,12 @@ export class Game {
             this.are = true;
             this.gravTimer.pause();
             var b = games[0];
-            
-            b.boolKeys.right.down = false;
-            clearTimeout(b.pieceMoveTimeout["right"]);
-            b.boolKeys.left.down = false;
-            clearTimeout(b.pieceMoveTimeout["left"]);
-            b.boolKeys.sd.down = false;
-                    
+              
             this.animateBoard(tempBoard);  
  
-            await sleep(484);
+            await sleep(b.settings.lineClearDelay);
         }
-       // compress
+        
         var swap = function(board, row1, row2) {
             var arr1 = board[row1];
             board[row1] = board[row2];
@@ -1712,9 +1733,10 @@ export class Game {
         }
     
         this.copyBoard(tempBoard);
-         
+        
         this.are = false;
         this.gravTimer = null;
+        
     }
 
     download() {
@@ -1820,8 +1842,7 @@ export class Game {
         var settings = {
             das: 167, //
             arr: 32, //Math.floor(1000/60),
-            irs: true,
-            ihs: false,
+            lineClearDelay: 500, //milliseconds
             gravityDelay: 1000,
             maxMoves: 20,
             softDropSpeed: 38,
@@ -1850,6 +1871,8 @@ export class Game {
                 
             },
             loadFile: [],
+            irs: true,
+            ihs: false,
             optionsBarVisible: true,
             playable: true,
             showFinesseErrors: false,
@@ -1864,6 +1887,7 @@ export class Game {
                 "arr",
                 "irs",
                 "ihs",
+                "lineClearDelay",
                 "gravityDelay",
                 "maxMoves",
                 "softDropSpeed",
