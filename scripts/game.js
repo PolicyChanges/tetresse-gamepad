@@ -431,7 +431,7 @@ export class Game {
             v = addChild(gamePlay, gamePlay.id + "-heading", "div");
             v.classList.add(this.name + "-menu-break");
             v.innerHTML = "Game Play";
-            arr = ["ARR", "DAS"];
+            arr = ["ARR", "DAS", "LCD"];
             for (var i = 0; i < arr.length; i++) {
                 var g, e, e1;
                 if (i % 2 == 0) {
@@ -445,7 +445,7 @@ export class Game {
                 v.classList.add(this.name + "-question");
                 v.classList.add(this.name + "-al");
                 v.classList.add(this.name + "-menu-keybinds-button");
-                v.title = (v == 0 ? "Auto Repeat Rate - how fast the piece goes to the wall when a key is held down" : "Delayed Auto Shift - how long it takes when holding down a key to make the piece start moving really fast towards the wall");
+                v.title = (arr[i]=="LCD")?"Line Clear Delay: length of line clear animation in milliseconds" : ((arr[i]=="ARR" ? "Auto Repeat Rate - how fast the piece goes to the wall when a key is held down" : "Delayed Auto Shift - how long it takes when holding down a key to make the piece start moving really fast towards the wall"));
                 v = addChild(e, e.id + "-text", "div");
                 v.classList.add(this.name + "-al");
                 v.innerHTML = arr[i];
@@ -1713,7 +1713,7 @@ export class Game {
               
             this.animateBoard(tempBoard);  
  
-            await sleep(b.settings.lineClearDelay);
+            await sleep(b.settings.lcd);
         }
         
         var swap = function(board, row1, row2) {
@@ -1842,7 +1842,7 @@ export class Game {
         var settings = {
             das: 167, //
             arr: 32, //Math.floor(1000/60),
-            lineClearDelay: 500, //milliseconds
+            lcd: 500, //milliseconds
             gravityDelay: 1000,
             maxMoves: 20,
             softDropSpeed: 38,
@@ -1885,9 +1885,9 @@ export class Game {
             labels: [
                 "das",
                 "arr",
+                "lcd",
                 "irs",
                 "ihs",
-                "lineClearDelay",
                 "gravityDelay",
                 "maxMoves",
                 "softDropSpeed",
