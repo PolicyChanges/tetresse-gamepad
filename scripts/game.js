@@ -466,6 +466,7 @@ export class Game {
                             }
                     });
                     eles[3].focus();
+     
                 });
                 v = addChild(e, e.id + "-edit-area", "input");
                 v.type = "text";
@@ -479,10 +480,13 @@ export class Game {
                     if (eles[4].id.indexOf("-arr") != -1) {
                         board.settings.arr = val
                         setCookie("settings", JSON.stringify(board.settings), 1000);
-                    } else {
+                    } else if(eles[4].id.indexOf("-das") != -1) {
                         board.settings.das = val;
                         setCookie("settings", JSON.stringify(board.settings), 1000);
-                    }
+                    } else if(eles[4].id.indexOf("-lcd") != -1) {
+                        board.settings.lcd = val;
+                        setCookie("settings", JSON.stringify(board.settings), 1000);
+                    } 
                     eles[4].innerHTML = val;
                     eles[4].style.display = "inline-block";
                 });
@@ -527,8 +531,6 @@ export class Game {
                         board.settings.irs = e.target.checked;
                         setCookie("settings", JSON.stringify(board.settings), 1000);
                     } else {
-                        //alert("disable until fixed");
-                        //e.target.checked = false; // TODO: remove
                         board.settings.ihs = e.target.checked;
                         setCookie("settings", JSON.stringify(board.settings), 1000); // TODO remove these inline cookie updates
                     }
@@ -1646,6 +1648,8 @@ export class Game {
             for (var col = 0; col < 10; col++) {
                 var ele = this.board.tiles[row][col].element;
                 if(tempBoard[row][col] == animation){
+                    ele.style.animateDuration = games[0].settings.lcd+"ms";
+                    //document.getElementsByClassName("npc1Ani")[0].style.animationDuration = 
                     ele.classList.add(animation);
                 }
             }
