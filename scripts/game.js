@@ -932,7 +932,8 @@ export class Game {
         this.listeners = [];
         let gpButtons = [];
         let prevGpButtons = [];
-        let delayEntry = false;
+        this.isDelayEntry = false;
+        this.isLineClearDelay = false;
         window.repeatKeysTimeoutList = [];
         this.are = false;
         
@@ -1255,7 +1256,7 @@ export class Game {
            
             // every new piece's turn starts here
             this.stats.executeStatsListeners("pieceSpawn");
-            log("TODO: fix lazy hack");
+            log("TODO: fix hack");
             while(!window.repeatKeysTimeoutList.length === 0) { clearTimeout(window.repeatKeysTimeoutList.pop()); }
             this.piece = this.nextPieces.splice(0, 1)[0];
             this.updateQueue();
@@ -1286,9 +1287,6 @@ export class Game {
             if(b.settings.ihs){
                 var holdKey  = Object.keys(b.settings.keyCodes).find(key => b.settings.keyCodes[key] === "hold");
                 if(isKeyboardKeyDown[holdKey]) {
-                    //this.ihsSwapping = true;
-                    //if(b.swapped = true) return;
-                    
                     b.piece.addKeyPressed("hold");
                     if (b.heldPiece == null)
                         b.heldPiece = b.nextPieces.splice(0,1)[0];
@@ -1305,7 +1303,9 @@ export class Game {
                 }
             }
               
-            this.piece.display();                
+            // Ensure gravTimer is reset so no piece drop duplicates
+            this.gravTimer = null;
+            this.piece.display();
             this.gravTimer = new GravityTimer(this);
             this.movesMade = movesMade;
             
@@ -1323,10 +1323,7 @@ export class Game {
             this.resetGame();
             this.playPiece();
             // this.gameOver = true;
-              
         }
-
-                    
         // set key events
     }
 
@@ -1690,13 +1687,15 @@ export class Game {
                 removedRows.push(row);
             }
         }
-                
+        
+        log("TODO: put delay logic somewhere appropriate");        
         this.piece.linesCleared = removedRows.length;
+        var doLineClearDelay = false;
         
         if(this.piece.linesCleared >= 1 && this.piece.linesCleared <=4) {
-            this.delayEntry = true;
+            doLineClearDelay  = true;
         }
-        else this.delayEntry = false;
+       // else this.isLineClearDelay = false;
 
         // TODO add this to constructor of piece object
         if (removedRows.length != 0) {
@@ -1709,8 +1708,9 @@ export class Game {
             
 
         this.piece.clearShadow();
-            // Line Clear Delay
-        if(this.delayEntry) {
+            
+        // Line Clear Delay
+        if(doLineClearDelay) {
             this.are = true;
             this.gravTimer.pause();
             var b = games[0];
@@ -1739,7 +1739,8 @@ export class Game {
         this.copyBoard(tempBoard);
         
         this.are = false;
-        this.gravTimer = null;
+        
+        if(doLineClearDelay){if(this.gravTimer != null) this.gravTimer.resume();}
         
     }
 
@@ -1845,8 +1846,10 @@ export class Game {
     static getDefaultSettings() {
         var settings = {
             das: 167, //
-            arr: 32, //Math.floor(1000/60),
-            lcd: 500, //milliseconds
+            arr: 50, //Math.floor(1000/60),
+            lcd: 500, //line clear delay in milliseconds
+            ed: 100, //entry delay in milliseconds
+            lockDownInterval: 5000, // piece lockdown
             gravityDelay: 1000,
             maxMoves: 20,
             softDropSpeed: 38,
@@ -1890,6 +1893,7 @@ export class Game {
                 "das",
                 "arr",
                 "lcd",
+                "ed",
                 "irs",
                 "ihs",
                 "gravityDelay",

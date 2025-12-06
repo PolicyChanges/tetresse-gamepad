@@ -561,8 +561,8 @@ export class Clock {
         this.startTime = new Date().getTime();
 
         // tick must update as fast as pieces are placed requestAnimationFrame guarentees this ~~use setTimeout over requestAnimationFrame for low priority elements~~
-        //this.timer = setTimeout(this.loop, 16, this.board, this);
-        this.timer = requestAnimationFrame(()=>this.loop(this.board, this));
+        this.timer = setTimeout(this.loop, this.interval, this.board, this);
+        //this.timer = requestAnimationFrame(()=>this.loop(this.board, this));
     }
 
     loop(b, c) {
@@ -570,8 +570,8 @@ export class Clock {
             c.func(b);
         //    c.lastClockUpdateTimestamp = new Date().getTime()
         // }
-        c.timer = requestAnimationFrame(()=>c.loop(b,c));
-        //c.timer = setTimeout(c.loop, c.interval, c.board, c);
+        //c.timer = requestAnimationFrame(()=>c.loop(b,c));
+        c.timer = setTimeout(c.loop, c.interval, c.board, c);
     }
 
     complete() {
@@ -666,7 +666,8 @@ export class Piece {
         this.linesCleared = 0;
         this.spin = false;
         this.landed = false;
-        this.lockTimer = new Date().getTime();
+        this.lockTimer = null;//new Date().getTime();
+        this.pieceEntryTimer = null;
         
         // adjustments for cw. For ccw multiply by -1.
         // sets are: (column adjust, row adjust)
@@ -762,8 +763,6 @@ export class Piece {
     }
 
     place() {
-       // if(games[0].are) return;
-        //while(games[0].are) await sleep(1);
         var testUpLoc = this.getLocation();
         testUpLoc[0]--;
         if (!(this.canMove(1) || this.canMove(-1) || this.isValidPosition(testUpLoc, this.pieceLayout))) {
@@ -830,14 +829,15 @@ export class Piece {
 
     // display piece on board
     async display() {
-        //while(this.are) sleep(1);
         if (!this.displayed) {
             this.displayed = true;
+            // entry delay with blocking wait
+            wait(this.board.settings.ed);
+            //await sleep(this.board.settings.ed);
             this.loc = this.getDefaultLoc();
         }
 
         if (!this.isValidPosition(this.loc, this.pieceLayout)) {
-           // while(this.are) sleep(1);
             error("Piece [" + this.piece + "] collision error. location: \n" + this.loc + "\npieceLayout:\n" + this.pieceLayout);
             return;
         }
@@ -952,7 +952,7 @@ export class Piece {
             if(this.landed == false) {
                 this.landed = true;
                 this.lockTimer = this.startTime = new Date().getTime();
-            }else if( new Date().getTime() - this.lockTimer >= 15000) // 15000 is 15 seconds of lock delay
+            }else if(this.lockTimer && new Date().getTime() - this.lockTimer >= this.board.settings.lockDownInterval) // 15000 is 15 seconds of lock delay
                 this.isDropped = true;        }
     }
 
