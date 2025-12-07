@@ -239,7 +239,7 @@ export class Stats {
 
         this.board = board;
 
-        this.clock = new Clock(this.board, 1000, function(b) {
+        this.clock = new Clock(this.board, 32, function(b) {
             b.stats.executeStatsListeners("tick");
         });
 
