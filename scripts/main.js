@@ -662,6 +662,7 @@ export class Piece {
         this.keysPressed = []; // fill out by key listeners then adds to record
         this.linesCleared = 0;
         this.spin = false;
+        this.isMovementEnabled = true;
         this.landed = false;
         this.lockTimer = null;
         // adjustments for cw. For ccw multiply by -1.
@@ -719,6 +720,7 @@ export class Piece {
     }
 
     addMove(m) {
+        if(!this.isMovementEnabled) return;
         var v = {action: m, time: new Date().getTime()};
         if (m == 0)
             v.piece = this.piece;
@@ -731,6 +733,7 @@ export class Piece {
     }
 
     reset() {
+        this.isMovementEnabled = true;
         this.isDropped = false;
         this.clear();
         this.loc = this.getDefaultLoc();
@@ -738,6 +741,9 @@ export class Piece {
         this.loc = this.getDefaultLoc();
         this.addKeyPressed("hold"); // TODO: fix - super jank
         this.addMove(8);
+        this.landed = false;
+        this.lockTimer = null;
+        
         var movesMade = 0;
         /*TODO: IRS on reset
          * if(gamepadAPI.isButtonPressed('B'))
@@ -758,6 +764,7 @@ export class Piece {
     }
 
     place() {
+        if(!this.isMovementEnabled) return;
         var testUpLoc = this.getLocation();
         testUpLoc[0]--;
         if (!(this.canMove(1) || this.canMove(-1) || this.isValidPosition(testUpLoc, this.pieceLayout))) {
@@ -777,6 +784,7 @@ export class Piece {
     
     // erase piece from board
     clear() {
+        //if(!this.isMovementEnabled) return;
         if (this.isDropped)
             return;
         for (var row = 0; row < this.pieceLayout.length; row++) {
@@ -801,6 +809,7 @@ export class Piece {
     }
         
     hold() {
+        if(!this.isMovementEnabled) return;
         this.addMove(7);
         this.clear();
         this.loc = this.getDefaultLoc();
@@ -811,6 +820,7 @@ export class Piece {
     }
 
     setRotation(r) {
+        //if(!this.isMovementEnabled) return;
         var count = 0;
         while (this.rotation != r) {
             this.rotate(1);
@@ -843,7 +853,7 @@ export class Piece {
 
     // display piece on board
     async display() {
-
+       // if(!this.isMovementEnabled) return;
         if (!this.displayed) {
             this.displayed = true;
             this.loc = this.getDefaultLoc();
@@ -854,7 +864,6 @@ export class Piece {
             return;
         }
 
-        while(games[0].are) await sleep(1);
         this.copyToBoard()
         this.displayShadow();
     }
@@ -905,6 +914,7 @@ export class Piece {
 
     // either 1 (cw) or -1 (ccw)
     rotate(num) {
+        if(!this.isMovementEnabled) return;
         if (num != 1 && num != -1) {
             error("Error: rotate value must be either 1 or -1 but was " + num);
             return;
@@ -936,6 +946,7 @@ export class Piece {
 
     // move the piece down one level: if it's at the bottom and can't go down this piece will become "dropped"
     drop() {
+        if(!this.isMovementEnabled) return;
         if(this.isDropped == true) {
             this.place();
             Audio.playHd();
@@ -968,6 +979,7 @@ export class Piece {
 
     // moves the piece this amount, positive is right, negative is left.
     move(amount) {
+        if(!this.isMovementEnabled) return;
         if (!this.canMove(amount))
             error("Can not move " + amount + " (positive is right, negative is left).");
         this.addMove((amount > 0) ? 1 : 2);
