@@ -2,9 +2,6 @@ import { Game } from './game.js'
 import { setCookie, getCookie, error, log, addEvent, addChild, deepClone, sleep, wait, fastEmptyArray } from './utils.js';
 
 export var games;
- 
-//var soundHd = new Audio('./snd/sound_hd.ogg');
-//var soundShift = new Audio('./snd/sound_shift.ogg');
 
 export var Audio = {
     audioContext: null,
@@ -582,8 +579,8 @@ export class Clock {
             this.resume();
         else
             this.pause();
-        cancelAnimationFrame(this.timer);
-        //clearTimeout(this.timer);
+        //cancelAnimationFrame(this.timer);
+        clearTimeout(this.timer);
         this.timer = undefined;
     }
 
@@ -666,9 +663,7 @@ export class Piece {
         this.linesCleared = 0;
         this.spin = false;
         this.landed = false;
-        this.lockTimer = null;//new Date().getTime();
-        this.pieceEntryTimer = null;
-        
+        this.lockTimer = null;
         // adjustments for cw. For ccw multiply by -1.
         // sets are: (column adjust, row adjust)
         var rot1 = [];
@@ -743,7 +738,7 @@ export class Piece {
         this.loc = this.getDefaultLoc();
         this.addKeyPressed("hold"); // TODO: fix - super jank
         this.addMove(8);
-        var movesMade = 0
+        var movesMade = 0;
         /*TODO: IRS on reset
          * if(gamepadAPI.isButtonPressed('B'))
             rotate = 1;
@@ -827,20 +822,7 @@ export class Piece {
         }
     }
 
-    // display piece on board
-    async display() {
-        if (!this.displayed) {
-            this.displayed = true;
-            // entry delay with blocking wait
-            wait(this.board.settings.ed);
-            //await sleep(this.board.settings.ed);
-            this.loc = this.getDefaultLoc();
-        }
-
-        if (!this.isValidPosition(this.loc, this.pieceLayout)) {
-            error("Piece [" + this.piece + "] collision error. location: \n" + this.loc + "\npieceLayout:\n" + this.pieceLayout);
-            return;
-        }
+    copyToBoard() {
         for (var row = 0; row < this.pieceLayout.length; row++) {
             for (var col = 0; col < this.pieceLayout.length; col++) {
                 if (this.pieceLayout[row][col] == 1) {
@@ -856,7 +838,24 @@ export class Piece {
                     }
                 }
             }
-        }        
+        }  
+    }
+
+    // display piece on board
+    async display() {
+
+        if (!this.displayed) {
+            this.displayed = true;
+            this.loc = this.getDefaultLoc();
+        }
+
+        if (!this.isValidPosition(this.loc, this.pieceLayout)) {
+            error("Piece [" + this.piece + "] collision error. location: \n" + this.loc + "\npieceLayout:\n" + this.pieceLayout);
+            return;
+        }
+
+        while(games[0].are) await sleep(1);
+        this.copyToBoard()
         this.displayShadow();
     }
 
@@ -936,8 +935,7 @@ export class Piece {
     }
 
     // move the piece down one level: if it's at the bottom and can't go down this piece will become "dropped"
-    async drop() {
-        //while(this.are) sleep(1);
+    drop() {
         if(this.isDropped == true) {
             this.place();
             Audio.playHd();
@@ -952,8 +950,9 @@ export class Piece {
             if(this.landed == false) {
                 this.landed = true;
                 this.lockTimer = this.startTime = new Date().getTime();
-            }else if(this.lockTimer && new Date().getTime() - this.lockTimer >= this.board.settings.lockDownInterval) // 15000 is 15 seconds of lock delay
-                this.isDropped = true;        }
+            }else if(this.isDropped == false && this.lockTimer && new Date().getTime() - this.lockTimer >= this.board.settings.lockDownInterval) // 15000 is 15 seconds of lock delay
+                this.isDropped = true;        
+        }
     }
 
     canDrop() {
@@ -992,7 +991,6 @@ export class Piece {
     // tests if there are any conflicts at location (2 element array) and arr (piece layout array)
     isValidPosition(loc, arr) {
         // remove own piece from the virtual board before checking
-
         for (var row = 0; row < arr.length; row++) {
             for (var col = 0; col < arr[0].length; col++) {
                 // if the tile in arr is empty don't need to check
@@ -1010,7 +1008,6 @@ export class Piece {
                 }
             }
         }
-
         return true;
     }
     

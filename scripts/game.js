@@ -431,7 +431,7 @@ export class Game {
             v = addChild(gamePlay, gamePlay.id + "-heading", "div");
             v.classList.add(this.name + "-menu-break");
             v.innerHTML = "Game Play";
-            arr = ["ARR", "DAS", "LCD"];
+            arr = ["ARR", "DAS", "LCD", "ED"];
             for (var i = 0; i < arr.length; i++) {
                 var g, e, e1;
                 if (i % 2 == 0) {
@@ -445,7 +445,11 @@ export class Game {
                 v.classList.add(this.name + "-question");
                 v.classList.add(this.name + "-al");
                 v.classList.add(this.name + "-menu-keybinds-button");
-                v.title = (arr[i]=="LCD")?"Line Clear Delay: length of line clear animation in milliseconds" : ((arr[i]=="ARR" ? "Auto Repeat Rate - how fast the piece goes to the wall when a key is held down" : "Delayed Auto Shift - how long it takes when holding down a key to make the piece start moving really fast towards the wall"));
+                v.title = 
+                (arr[i]=="ED" ? "Entry Delay: lenght of time between when the last piece locks and the next piece appears" : 
+                (arr[i]=="LCD")?"Line Clear Delay: length of line clear animation in milliseconds" : 
+                ((arr[i]=="ARR" ? "Auto Repeat Rate - how fast the piece goes to the wall when a key is held down" : 
+                "Delayed Auto Shift - how long it takes when holding down a key to make the piece start moving really fast towards the wall")));
                 v = addChild(e, e.id + "-text", "div");
                 v.classList.add(this.name + "-al");
                 v.innerHTML = arr[i];
@@ -932,11 +936,11 @@ export class Game {
         this.listeners = [];
         let gpButtons = [];
         let prevGpButtons = [];
-        this.isDelayEntry = false;
         this.isLineClearDelay = false;
+        this.isFirstPieceOfGame = true;
         window.repeatKeysTimeoutList = [];
         this.are = false;
-        
+        this.isEntryDelay = false;
         
         var setListeners = function() {
             var b = null;
@@ -1238,7 +1242,7 @@ export class Game {
 
     async playPiece() {
        while(this.are) {await sleep(1);}
-        if (this.paused || this.gameOver || this.are)
+        if (this.paused || this.gameOver || this.are || this.isEntryDelay)
             return;
         if (this.piece == null) {
             this.updateQueue();
@@ -1252,18 +1256,17 @@ export class Game {
 
         var rotate = 0;
         let  b = games[0];
+        var newPiece = false;
         if (!this.gameOver && (this.piece == null || this.piece.isDropped)) {
-           
             // every new piece's turn starts here
             this.stats.executeStatsListeners("pieceSpawn");
             log("TODO: fix hack");
             while(!window.repeatKeysTimeoutList.length === 0) { clearTimeout(window.repeatKeysTimeoutList.pop()); }
             this.piece = this.nextPieces.splice(0, 1)[0];
             this.updateQueue();
-            
+            newPiece = true;
         }
 
-        
         if (!this.gameOver) {
             
             var movesMade = 0;
@@ -1303,9 +1306,25 @@ export class Game {
                 }
             }
               
+            
             // Ensure gravTimer is reset so no piece drop duplicates
             this.gravTimer = null;
-            this.piece.display();
+            if(newPiece){
+                if(this.isFirstPieceOfGame == true) {
+                    this.isFirstPieceOfGame = false;
+                    this.piece.display();
+                }
+                //Do piece entry delay unless first piece
+                else {
+                    this.isEntryDelay = true;
+                    await sleep(b.settings.ed);
+                    //wait(b.settings.ed);
+                    //setTimeout(b.settings.ed, this.piece.display.bind(this));
+                    this.piece.display();
+                    this.isEntryDelay = false;
+                }
+            }else
+                this.piece.display();
             this.gravTimer = new GravityTimer(this);
             this.movesMade = movesMade;
             
@@ -1353,6 +1372,7 @@ export class Game {
         this.updateNextPieces();
         this.stats.reset();
         this.repeatKeysTimeoutList = [];
+        this.isFirstPieceOfGame = true;
     }
 
     /**
@@ -1719,7 +1739,7 @@ export class Game {
  
             await sleep(b.settings.lcd);
         }
-        
+
         var swap = function(board, row1, row2) {
             var arr1 = board[row1];
             board[row1] = board[row2];
@@ -1736,8 +1756,8 @@ export class Game {
             offset++;
         }
     
+        while(games[0].isEntryDelay) await sleep(1);
         this.copyBoard(tempBoard);
-        
         this.are = false;
         
         if(doLineClearDelay){if(this.gravTimer != null) this.gravTimer.resume();}
@@ -1846,7 +1866,7 @@ export class Game {
     static getDefaultSettings() {
         var settings = {
             das: 167, //
-            arr: 50, //Math.floor(1000/60),
+            arr: 33, //Math.floor(1000/60),
             lcd: 500, //line clear delay in milliseconds
             ed: 100, //entry delay in milliseconds
             lockDownInterval: 5000, // piece lockdown
