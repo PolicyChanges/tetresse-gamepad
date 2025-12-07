@@ -86,3 +86,28 @@ export async function sleep(ms) {
     await new Promise(resolve => setTimeout(resolve, ms));
 }
 
+const timeout = (ms, message) => {
+  return new Promise((_, reject) => {
+    setTimeout(() => {
+      reject(new Error(message || "Operation timed out"));
+    }, ms);
+  });
+};
+
+export async function asyncExecuteTimeout(timeoutInterval, taskFunc, ...params) {
+  try {
+    const result = await Promise.race([
+      timeout(timeoutInterval, "Task took too long!"), // 3-second timeout
+      (async () => {
+        // Simulate a long-running task
+        //await delay(5000); // This will be interrupted by the timeout
+        taskFunc(params[0]);
+        return "Task completed successfully";
+      })()
+    ]);
+    console.log(result);
+  } catch (error) {
+    console.error("Error:", error.message);
+  }
+}
+

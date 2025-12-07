@@ -239,7 +239,7 @@ export class Stats {
 
         this.board = board;
 
-        this.clock = new Clock(this.board, 100, function(b) {
+        this.clock = new Clock(this.board, 1000, function(b) {
             b.stats.executeStatsListeners("tick");
         });
 
@@ -303,6 +303,7 @@ export class Stats {
         this.totalPauseTime = new PageStat(["time-paused", this, 0, "t"]);
         var tempDate = new Date();
         this.startTime = new PageStat(["start-time", this, "" + tempDate.getHours() + ":" + tempDate.getMinutes() + ":" + tempDate.getSeconds()]);
+        this.lastClockUpdateTimestamp = this.startTime;
         // TODO set end time when game finishes
         this.endTime = new PageStat(["end-time", this]);
 
@@ -424,10 +425,10 @@ export class PageStat {
         this.type = type;
         this.append = (append == null ? "" : append);
         this.linked = linked;
-        this.updateElementsInterval = 200;
+        this.updateElementsInterval = 100;
         this.lastUpdateElementTimestamp = new Date().getTime();
         this.updateElements();
-    
+        this.gameTimer = document.getElementById("gametime");
         stats.psArr.push(this);
     }
 
@@ -479,19 +480,23 @@ export class PageStat {
                 else
                     v = (1.0 * this.value / p).toFixed(3);
             } else if (this.type == "t") {
-                var s = ((this.value % 60000) / 1000).toFixed(3);
-                var m = Math.floor((this.value / 60000) % 60);
-                var h = Math.floor((this.value / 3600000));
-                v = (h == 0 ? "" : h + ":") + (m == 0 ? "" : m + ":") + s;
+                //var millis = ((this.value % 60000) / 1000).toFixed(3);
+                //var sec = Math.floor((this.value / 60000) % 60);
+                //var min = Math.floor((this.value / 3600000));
+                //v = (min == 0 ? "" : min + ":") + (sec == 0 ? "" : sec + ":") + millis;
+                if(this.gameTimer === undefined)this.gameTimer = document.getElementById("gametime");
+                var millis = this.value/1000.0;
+                this.gameTimer.textContent = (this.value/1000.0).toFixed(3);
             } else {
                 error("Type not recognized: " + this.type);
             }
         }
         
+        
         if(new Date().getTime() - this.lastUpdateElementTimestamp >= this.updateElementsInterval) {
             if (this.elements != null) {
                 for (var i = 0; i < this.elements.length; i++) {
-                    if (this.elements[i].matches("div")) { // TODO 
+                    if (this.elements[i].matches("div") && this.type != "t") { // TODO 
                             this.elements[i].textContent = "" + v + (this.append == null ? "" : this.append);
                     } else {
                         this.elements.splice(i, 1);
@@ -556,19 +561,19 @@ export class Clock {
         if (this.startTime != null)
             this.pausedTime += new Date().getTime() - this.startTime;
         this.startTime = new Date().getTime();
-
+        this.lastClockUpdateTimestamp = this.startTime;
         // tick must update as fast as pieces are placed requestAnimationFrame guarentees this ~~use setTimeout over requestAnimationFrame for low priority elements~~
-        this.timer = setTimeout(this.loop, this.interval, this.board, this);
-        //this.timer = requestAnimationFrame(()=>this.loop(this.board, this));
+        //this.timer = setTimeout(this.loop, this.interval, this.board, this);
+        this.timer = requestAnimationFrame(()=>this.loop(this.board, this));
     }
 
     loop(b, c) {
-        //if(new Date().getTime() - c.lastClockUpdateTimestamp >= c.interval) {
+        if(new Date().getTime() - c.lastClockUpdateTimestamp >= c.interval) {
             c.func(b);
-        //    c.lastClockUpdateTimestamp = new Date().getTime()
-        // }
-        //c.timer = requestAnimationFrame(()=>c.loop(b,c));
-        c.timer = setTimeout(c.loop, c.interval, c.board, c);
+            c.lastClockUpdateTimestamp = new Date().getTime();
+        }
+        c.timer = requestAnimationFrame(()=>c.loop(b,c));
+        //c.timer = setTimeout(c.loop, c.interval, c.board, c);
     }
 
     complete() {
@@ -579,8 +584,8 @@ export class Clock {
             this.resume();
         else
             this.pause();
-        //cancelAnimationFrame(this.timer);
-        clearTimeout(this.timer);
+        cancelAnimationFrame(this.timer);
+        //clearTimeout(this.timer);
         this.timer = undefined;
     }
 
@@ -809,7 +814,8 @@ export class Piece {
     }
         
     hold() {
-        if(!this.isMovementEnabled) return;
+        //if(!this.isMovementEnabled) return;
+        this.isMovementEnabled = true;
         this.addMove(7);
         this.clear();
         this.loc = this.getDefaultLoc();

@@ -1,4 +1,4 @@
-import { setCookie, getCookie, error, log, addEvent, addChild, deepClone, sleep, wait, fastEmptyArray } from './utils.js';
+import { setCookie, getCookie, error, log, addEvent, addChild, deepClone, sleep, wait, fastEmptyArray, asyncExecuteTimeout } from './utils.js';
 import { games, gamepadAPI, Piece, PageStat, GravityTimer, Clock, Stats } from './main.js';
 
 
@@ -1293,8 +1293,8 @@ export class Game {
 
             if(b.settings.irs && this.isEntryDelay == false) {
                 b.piece.isMovementEnabled = true;
-                var cwKey  = Object.keys(b.settings.keyCodes).find(key => b.settings.keyCodes[key] === "cw");
-                var ccwKey = Object.keys(b.settings.keyCodes).find(key => b.settings.keyCodes[key] === "ccw");
+                const cwKey  = Object.keys(b.settings.keyCodes).find(key => b.settings.keyCodes[key] === "cw");
+                const ccwKey = Object.keys(b.settings.keyCodes).find(key => b.settings.keyCodes[key] === "ccw");
                 
                 if(isKeyboardKeyDown[cwKey])
                     rotate = 1;
@@ -1310,7 +1310,7 @@ export class Game {
             
             if(b.settings.ihs && this.isEntryDelay == false){
                 b.piece.isMovementEnabled = true;
-                var holdKey  = Object.keys(b.settings.keyCodes).find(key => b.settings.keyCodes[key] === "hold");
+                const holdKey  = Object.keys(b.settings.keyCodes).find(key => b.settings.keyCodes[key] === "hold");
                 if(isKeyboardKeyDown[holdKey]) {
                     b.piece.addKeyPressed("hold");
                     if (b.heldPiece == null)
@@ -1661,7 +1661,7 @@ export class Game {
     }
 
     async animateBoard(tempBoard) {
-        while(this.isEntryDelay) await sleep(1);
+        //while(this.isEntryDelay) await sleep(1);
         // copy board to screen
         var animation = "removeRow";
         for (var row = 20; row < 40; row++) {
@@ -1739,7 +1739,7 @@ export class Game {
             var b = games[0];
               
             this.animateBoard(tempBoard);  
- 
+            //await asyncExecuteTimeout(b.settings.lcd, this.animateBoard.bind(this), tempBoard);
             await sleep(b.settings.lcd);
         }
 
